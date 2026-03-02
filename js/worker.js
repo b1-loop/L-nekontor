@@ -342,6 +342,47 @@ function setStatus(status, comment = '') {
     saveData(); loadWorkerView(); showToast(`Status satt till ${status}`);
 }
 
+function changePIN() {
+    const oldPin     = document.getElementById('old-pin-input').value;
+    const newPin     = document.getElementById('new-pin-input').value;
+    const confirmPin = document.getElementById('confirm-pin-input').value;
+    if (!oldPin || !newPin || !confirmPin) return showToast('Fyll i alla PIN-fält.', 'warning');
+    if (oldPin !== currentUser.pin) return showToast('Fel nuvarande PIN.', 'error');
+    if (!/^\d{4}$/.test(newPin)) return showToast('Ny PIN måste vara exakt 4 siffror.', 'error');
+    if (newPin !== confirmPin) return showToast('De nya PIN-koderna matchar inte.', 'error');
+    if (employees.find(e => e.pin === newPin && e.id !== currentUser.id)) return showToast('PIN-koden används redan av någon annan.', 'error');
+    currentUser.pin = newPin;
+    document.getElementById('old-pin-input').value   = '';
+    document.getElementById('new-pin-input').value   = '';
+    document.getElementById('confirm-pin-input').value = '';
+    saveData();
+    addLog('Bytte PIN-kod');
+    showToast('PIN-kod uppdaterad!', 'success');
+}
+
+function copyLastWeekSchedule() {
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    let dow = now.getDay(); if (dow === 0) dow = 7;
+    const thisMonday = new Date(now); thisMonday.setDate(now.getDate() - dow + 1);
+    const lastMonday = new Date(thisMonday); lastMonday.setDate(thisMonday.getDate() - 7);
+    const lastSunday = new Date(lastMonday); lastSunday.setDate(lastMonday.getDate() + 6);
+    const fromStr = lastMonday.toISOString().slice(0, 10);
+    const toStr   = lastSunday.toISOString().slice(0, 10);
+    const lastWeekShifts = currentUser.schedule.filter(s => s.day >= fromStr && s.day <= toStr);
+    if (!lastWeekShifts.length) return showToast('Inga pass förra veckan att kopiera.', 'warning');
+    let added = 0;
+    lastWeekShifts.forEach(shift => {
+        const newDate = new Date(shift.day); newDate.setDate(newDate.getDate() + 7);
+        const newDateStr = newDate.toISOString().slice(0, 10);
+        if (!currentUser.schedule.some(s => s.day === newDateStr && s.time === shift.time)) {
+            currentUser.schedule.push({ day: newDateStr, time: shift.time });
+            added++;
+        }
+    });
+    if (added > 0) { saveData(); loadWorkerView(); showToast(`${added} pass kopierade till denna vecka!`, 'success'); }
+    else showToast('Dessa pass finns redan denna vecka.', 'warning');
+}
+
 function saveProfile() {
     if (!currentUser) return;
     currentUser.personnummer = (document.getElementById('profile-personnummer')?.value || '').trim();

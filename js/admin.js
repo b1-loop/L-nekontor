@@ -15,6 +15,8 @@ function loadAdminData() {
     const chartLabels = [], chartRegularPay = [], chartOBPay = [];
 
     renderLogs();
+    renderOvertimeReport();
+    renderSharedCalendar();
 
     // Update sort indicators
     ['name', 'hours', 'ob', 'gross'].forEach(col => {
@@ -67,6 +69,24 @@ function loadAdminData() {
         </tr>`;
     });
 
+    // Feature 8: dashboard stats
+    let totalCost = 0, totalHrs = 0;
+    emps.forEach(emp => {
+        const hist = getFilteredHistory(emp);
+        hist.forEach(s => {
+            totalHrs  += s.hours + s.obHours + (s.otHours || 0);
+            totalCost += (s.hours * emp.wage) + (s.obHours * emp.wage * 1.5) + ((s.otHours || 0) * emp.wage * 0.5);
+        });
+    });
+    const activeNow = employees.filter(e => e.role !== 'admin' && e.status === 'Inloggad').length;
+    const wages     = emps.map(e => e.wage);
+    const avgWage   = wages.length ? Math.round(wages.reduce((a, b) => a + b, 0) / wages.length) : 0;
+    const el = id => document.getElementById(id);
+    if (el('admin-total-cost'))    el('admin-total-cost').innerText    = Math.round(totalCost).toLocaleString('sv-SE') + ' kr';
+    if (el('admin-active-now'))    el('admin-active-now').innerText    = activeNow;
+    if (el('admin-avg-wage'))      el('admin-avg-wage').innerText      = avgWage + ' kr/h';
+    if (el('admin-total-hours'))   el('admin-total-hours').innerText   = totalHrs.toFixed(1) + 'h';
+
     updateChart(chartLabels, chartRegularPay, chartOBPay);
 }
 
@@ -99,6 +119,125 @@ async function deleteEmployee(id) {
         employees = employees.filter(e => e.id !== id);
         saveData(); loadAdminData(); showToast("Anställd raderad");
     } catch (_) {}
+}
+
+// ================================================================
+// ÖVERTIDSRAPPORT (Feature 2)
+// ================================================================
+function renderOvertimeReport() {
+    const list = document.getElementById('overtime-report-list');
+    if (!list) return;
+    const data = employees
+        .filter(e => e.role !== 'admin')
+        .map(emp => ({ name: emp.name, otHrs: getFilteredHistory(emp).reduce((s, h) => s + (h.otHours || 0), 0) }))
+        .filter(d => d.otHrs > 0)
+        .sort((a, b) => b.otHrs - a.otHrs);
+
+    if (!data.length) {
+        list.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:1rem 0;">Ingen övertid registrerad för vald period.</p>';
+        return;
+    }
+    const maxOt = data[0].otHrs;
+    list.innerHTML = data.map(d => {
+        const pct   = Math.round(d.otHrs / maxOt * 100);
+        const color = d.otHrs > 20 ? '#ef4444' : d.otHrs > 10 ? '#f97316' : '#f59e0b';
+        return `<div style="margin-bottom:0.75rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.3rem;">
+                <span>${d.name}</span>
+                <span style="color:${color}; font-weight:700;">${d.otHrs.toFixed(1)}h övertid</span>
+            </div>
+            <div style="height:8px; background:var(--stat-bg); border-radius:4px;">
+                <div style="height:8px; width:${pct}%; background:${color}; border-radius:4px;"></div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ================================================================
+// SEMESTERPLANERING / DELAD KALENDER (Feature 4)
+// ================================================================
+let _planMonth = new Date().getMonth();
+let _planYear  = new Date().getFullYear();
+
+function renderSharedCalendar() {
+    const container = document.getElementById('shared-calendar-container');
+    if (!container) return;
+
+    const monthStr   = `${_planYear}-${String(_planMonth + 1).padStart(2, '0')}`;
+    const firstDay   = new Date(_planYear, _planMonth, 1);
+    const lastDay    = new Date(_planYear, _planMonth + 1, 0);
+    const todayStr   = new Date().toISOString().slice(0, 10);
+    const monthLabel = firstDay.toLocaleDateString('sv-SE', { year: 'numeric', month: 'long' });
+
+    const dayMap = {};
+    employees.filter(e => e.role !== 'admin').forEach(emp => {
+        const first = emp.name.split(' ')[0];
+        emp.schedule.forEach(s => {
+            if (!s.day.startsWith(monthStr)) return;
+            if (!dayMap[s.day]) dayMap[s.day] = { shifts: [], absences: [] };
+            dayMap[s.day].shifts.push(first);
+        });
+        (emp.vacationHistory || []).forEach(entry => {
+            const d = typeof entry === 'string' ? entry : entry.date;
+            if (!d.startsWith(monthStr)) return;
+            if (!dayMap[d]) dayMap[d] = { shifts: [], absences: [] };
+            dayMap[d].absences.push({ name: first, type: 'vacation' });
+        });
+        (emp.sickHistory || []).forEach(entry => {
+            const d = typeof entry === 'string' ? entry : entry.date;
+            if (!d.startsWith(monthStr)) return;
+            if (!dayMap[d]) dayMap[d] = { shifts: [], absences: [] };
+            dayMap[d].absences.push({ name: first, type: 'sick' });
+        });
+    });
+
+    const dayNames = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
+    let html = '<div class="cal-grid">';
+    dayNames.forEach(d => { html += `<div class="cal-header">${d}</div>`; });
+
+    let startDow = firstDay.getDay() - 1; if (startDow < 0) startDow = 6;
+    for (let i = 0; i < startDow; i++) html += '<div class="cal-day empty"></div>';
+
+    for (let d = 1; d <= lastDay.getDate(); d++) {
+        const dateStr = `${monthStr}-${String(d).padStart(2, '0')}`;
+        const data    = dayMap[dateStr];
+        const isToday = dateStr === todayStr;
+        let content   = '';
+        if (data?.shifts?.length) {
+            content += data.shifts.map(n =>
+                `<span style="display:block; font-size:0.6rem; color:#3b82f6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${n}</span>`
+            ).join('');
+        }
+        if (data?.absences?.length) {
+            content += data.absences.map(a =>
+                `<span style="display:block; font-size:0.6rem; color:${a.type === 'vacation' ? '#10b981' : '#ef4444'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${a.name} ${a.type === 'vacation' ? '🏖️' : '🤒'}</span>`
+            ).join('');
+        }
+        html += `<div class="cal-day ${isToday ? 'is-today' : ''}" style="min-height:60px; align-items:flex-start; padding:0.3rem;">
+            <span class="cal-date">${d}</span>${content}
+        </div>`;
+    }
+    html += '</div>';
+
+    container.innerHTML = `
+        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem; flex-wrap:wrap;">
+            <button class="btn-sm" onclick="changePlanMonth(-1)">◀</button>
+            <strong style="text-transform:capitalize;">${monthLabel}</strong>
+            <button class="btn-sm" onclick="changePlanMonth(1)">▶</button>
+            <span style="font-size:0.8rem; color:var(--text-muted); margin-left:0.5rem;">
+                <span style="color:#3b82f6;">●</span> Schemalagd
+                <span style="color:#10b981; margin-left:0.5rem;">●</span> Semester
+                <span style="color:#ef4444; margin-left:0.5rem;">●</span> Sjuk
+            </span>
+        </div>
+        ${html}`;
+}
+
+function changePlanMonth(dir) {
+    _planMonth += dir;
+    if (_planMonth < 0)  { _planMonth = 11; _planYear--; }
+    if (_planMonth > 11) { _planMonth = 0;  _planYear++; }
+    renderSharedCalendar();
 }
 
 // ================================================================

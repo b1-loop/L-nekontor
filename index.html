@@ -118,7 +118,10 @@
                     </h3>
                     <ul id="schedule-list" class="schedule-list"></ul>
 
-                    <h4 style="margin-top: 2rem;">Lägg till nytt pass</h4>
+                    <h4 style="margin-top:2rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                        Lägg till nytt pass
+                        <button class="btn-sm btn-edit" onclick="copyLastWeekSchedule()" style="font-size:0.72rem; padding:0.3rem 0.7rem;">📋 Kopiera förra veckan</button>
+                    </h4>
                     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                         <div class="form-group" style="margin-bottom:0; flex: 1.5;"><input type="date" id="new-shift-day" required></div>
                         <div class="form-group" style="margin-bottom:0; flex: 1;"><input type="time" id="new-shift-start" required></div>
@@ -154,12 +157,29 @@
                         <div class="form-group" style="flex:1; min-width:120px;"><label>Stad</label><input type="text" id="profile-city" placeholder="Stockholm"></div>
                     </div>
                     <button class="btn btn-primary" style="width:auto;" onclick="saveProfile()">💾 Spara profil</button>
+
+                    <hr style="margin:1.25rem 0; border:none; border-top:1px solid var(--card-border);">
+                    <h4 style="margin:0 0 0.75rem;">🔑 Byt PIN-kod</h4>
+                    <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                        <div class="form-group" style="flex:1; min-width:100px;"><label>Nuvarande PIN</label><input type="password" id="old-pin-input" maxlength="4" placeholder="****"></div>
+                        <div class="form-group" style="flex:1; min-width:100px;"><label>Ny PIN</label><input type="password" id="new-pin-input" maxlength="4" placeholder="****"></div>
+                        <div class="form-group" style="flex:1; min-width:100px;"><label>Bekräfta ny PIN</label><input type="password" id="confirm-pin-input" maxlength="4" placeholder="****"></div>
+                    </div>
+                    <button class="btn btn-primary" style="width:auto;" onclick="changePIN()">🔑 Byt PIN</button>
                 </div>
             </div>
 
             <!-- ===== ADMIN VIEW ===== -->
             <div id="admin-view" class="hidden">
                 <h2>Admin Dashboard</h2>
+
+                <!-- Feature 8: Dashboard stats -->
+                <div class="stats-grid" style="margin-bottom:1.5rem;">
+                    <div class="stat-box"><span>Lönekostnad (period)</span><strong id="admin-total-cost">0 kr</strong></div>
+                    <div class="stat-box"><span>Inloggade just nu</span><strong id="admin-active-now" style="color:#10b981;">0</strong></div>
+                    <div class="stat-box"><span>Snittlön</span><strong id="admin-avg-wage">0 kr/h</strong></div>
+                    <div class="stat-box"><span>Totala timmar (period)</span><strong id="admin-total-hours">0h</strong></div>
+                </div>
 
                 <div class="card">
                     <h3>📊 Kostnadsfördelning</h3>
@@ -218,6 +238,18 @@
                             <tbody id="payroll-body"></tbody>
                         </table>
                     </div>
+                </div>
+
+                <!-- Feature 2: Övertidsrapport -->
+                <div class="card" style="margin-top:1.5rem;">
+                    <h3>⚠️ Övertidsrapport</h3>
+                    <div id="overtime-report-list"></div>
+                </div>
+
+                <!-- Feature 4: Semesterplanering -->
+                <div class="card" style="margin-top:1.5rem;">
+                    <h3>📅 Semesterplanering & Schema</h3>
+                    <div id="shared-calendar-container"></div>
                 </div>
             </div>
         </div>
