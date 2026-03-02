@@ -180,7 +180,10 @@ function renderModalSchedule(id) {
                 <span style="margin-left:10px; color:var(--text-muted);">${shift.time}</span>
                 ${workedInfo}
             </div>
-            <button class="btn-sm btn-delete" onclick="deleteShiftFromModal('${id}', ${index})">✖</button>
+            <div style="display:flex; gap:0.25rem;">
+                <button class="btn-sm btn-edit" style="padding:0.4rem 0.6rem;" onclick="duplicateShiftModal('${id}', ${index})" title="Duplicera pass">📋</button>
+                <button class="btn-sm btn-delete" onclick="deleteShiftFromModal('${id}', ${index})">✖</button>
+            </div>
         </li>`;
     });
 }
@@ -244,11 +247,21 @@ function addRecurringShift() {
 let _historyEmpId    = null;
 let _editSessionIdx  = null;
 
+function clearHistoryFilter() {
+    const f = document.getElementById('hist-from');
+    const t = document.getElementById('hist-to');
+    if (f) f.value = '';
+    if (t) t.value = '';
+    if (_historyEmpId) openHistoryModal(_historyEmpId);
+}
+
 function openHistoryModal(id) {
+    if (id !== _historyEmpId) cancelEditSession();
     _historyEmpId = id;
-    cancelEditSession();
     const emp        = employees.find(e => e.id === id);
     const isAdmin    = currentUser.role === 'admin';
+    const fromVal    = document.getElementById('hist-from')?.value || '';
+    const toVal      = document.getElementById('hist-to')?.value   || '';
 
     document.getElementById('history-modal-title').innerText = `📋 Historik: ${emp.name}`;
 
@@ -261,7 +274,9 @@ function openHistoryModal(id) {
         document.getElementById('history-modal-summary').innerText = '';
     } else {
         empty.style.display = 'none';
-        const sorted = [...emp.workedHistory].sort((a, b) => b.date.localeCompare(a.date));
+        let sorted = [...emp.workedHistory].sort((a, b) => b.date.localeCompare(a.date));
+        if (fromVal) sorted = sorted.filter(s => s.date >= fromVal);
+        if (toVal)   sorted = sorted.filter(s => s.date <= toVal);
 
         // Feature 6: group by month
         const byMonth = {};
@@ -323,14 +338,29 @@ function openHistoryModal(id) {
             });
         }
 
-        body.innerHTML = html;
+        if (sorted.length) {
+            body.innerHTML = html;
+        } else {
+            body.innerHTML = '';
+            empty.style.display = 'block';
+        }
 
-        const tot = emp.workedHistory.reduce(
+        const tot = sorted.reduce(
             (a, s) => ({ h: a.h + s.hours, ob: a.ob + s.obHours, ot: a.ot + (s.otHours || 0) }),
             { h: 0, ob: 0, ot: 0 }
         );
+        const filterNote = (fromVal || toVal) ? ' (filtrerat)' : '';
         document.getElementById('history-modal-summary').innerText =
-            `Totalt: ${tot.h.toFixed(1)}h vanlig + ${tot.ob.toFixed(1)}h OB + ${tot.ot.toFixed(1)}h övertid`;
+            `Totalt: ${tot.h.toFixed(1)}h vanlig + ${tot.ob.toFixed(1)}h OB + ${tot.ot.toFixed(1)}h övertid${filterNote}`;
+    }
+
+    // Chart: monthly earnings per employee (Feature 4)
+    const chartSection = document.getElementById('history-chart-section');
+    if (emp.workedHistory.length >= 2) {
+        chartSection.classList.remove('hidden');
+        renderHistoryChart(emp);
+    } else {
+        chartSection.classList.add('hidden');
     }
 
     // Feature 10: absence history
@@ -341,10 +371,20 @@ function openHistoryModal(id) {
         absSection.classList.remove('hidden');
         let absHtml = '';
         if (vacHist.length) {
-            absHtml += `<p style="margin:0 0 0.4rem;"><strong>🏖️ Semester (${vacHist.length} dag${vacHist.length !== 1 ? 'ar' : ''}):</strong> ${[...vacHist].sort().reverse().join(', ')}</p>`;
+            const vacDates = [...vacHist].sort().reverse()
+                .map(d => isAdmin
+                    ? `${d} <button class="btn-sm btn-delete" style="padding:0.15rem 0.4rem; font-size:0.7rem;" onclick="removeAbsenceDate('${id}','vacation','${d}')">✖</button>`
+                    : d)
+                .join('&ensp;');
+            absHtml += `<p style="margin:0 0 0.4rem;"><strong>🏖️ Semester (${vacHist.length} dag${vacHist.length !== 1 ? 'ar' : ''}):</strong> ${vacDates}</p>`;
         }
         if (sickHist.length) {
-            absHtml += `<p style="margin:0;"><strong>🤒 Sjukdagar (${sickHist.length}):</strong> ${[...sickHist].sort().reverse().join(', ')}</p>`;
+            const sickDates = [...sickHist].sort().reverse()
+                .map(d => isAdmin
+                    ? `${d} <button class="btn-sm btn-delete" style="padding:0.15rem 0.4rem; font-size:0.7rem;" onclick="removeAbsenceDate('${id}','sick','${d}')">✖</button>`
+                    : d)
+                .join('&ensp;');
+            absHtml += `<p style="margin:0;"><strong>🤒 Sjukdagar (${sickHist.length}):</strong> ${sickDates}</p>`;
         }
         document.getElementById('history-absence-content').innerHTML = absHtml;
     } else {
@@ -367,6 +407,80 @@ function openHistoryModal(id) {
 function closeHistoryModal() {
     cancelEditSession();
     document.getElementById('history-modal').classList.remove('active');
+}
+
+// Feature 4 (monthly chart for employee)
+function renderHistoryChart(emp) {
+    const monthly = {};
+    emp.workedHistory.forEach(s => {
+        const m = s.date.slice(0, 7);
+        if (!monthly[m]) monthly[m] = 0;
+        monthly[m] += (s.hours * emp.wage) + (s.obHours * emp.wage * 1.5) + ((s.otHours || 0) * emp.wage * 0.5);
+    });
+    const months = Object.keys(monthly).sort();
+    const labels = months.map(m => new Date(m + '-01').toLocaleDateString('sv-SE', { month: 'short', year: '2-digit' }));
+    const data   = months.map(m => Math.round(monthly[m]));
+    if (window.historyEmpChart) window.historyEmpChart.destroy();
+    const ctx  = document.getElementById('history-emp-chart').getContext('2d');
+    const dark = document.body.classList.contains('dark-mode');
+    window.historyEmpChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Bruttolön (kr)', data, backgroundColor: '#3b82f6', borderRadius: 4 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: dark ? '#94a3b8' : '#64748b' } },
+                y: { border: { display: false }, ticks: { color: dark ? '#94a3b8' : '#64748b' } }
+            }
+        }
+    });
+}
+
+// Feature 2: remove a single absence date
+function removeAbsenceDate(empId, type, date) {
+    const emp = employees.find(e => e.id === empId);
+    if (!emp) return;
+    if (type === 'vacation') {
+        const idx = emp.vacationHistory.indexOf(date);
+        if (idx > -1) { emp.vacationHistory.splice(idx, 1); emp.vacationDaysLeft = (emp.vacationDaysLeft || 0) + 1; }
+    } else {
+        const idx = emp.sickHistory.indexOf(date);
+        if (idx > -1) { emp.sickHistory.splice(idx, 1); emp.sickDaysUsed = Math.max(0, (emp.sickDaysUsed || 0) - 1); }
+    }
+    saveData();
+    if (currentUser.role === 'admin') loadAdminData();
+    openHistoryModal(empId);
+    showToast('Frånvarodag borttagen.', 'success');
+}
+
+// Feature 5: reset vacation days to 25
+async function resetVacationDays() {
+    const id  = document.getElementById('edit-emp-id').value;
+    const emp = employees.find(e => e.id === id);
+    if (!emp) return;
+    try {
+        await confirmAction(`Återställ semesterdagar till 25 för ${emp.name}?`, 'Återställ semester');
+        emp.vacationDaysLeft = 25;
+        emp.vacationHistory  = [];
+        addLog(`Semesterdagar återställda för ${emp.name}`);
+        saveData(); loadAdminData();
+        document.getElementById('edit-vacation-days').value = 25;
+        showToast('Semesterdagar återställda till 25!', 'success');
+    } catch (_) {}
+}
+
+// Feature 8: duplicate a shift in admin edit modal
+function duplicateShiftModal(id, idx) {
+    const emp   = employees.find(e => e.id === id);
+    const shift = emp?.schedule[idx];
+    if (!shift) return;
+    const parts = shift.time.split(' - ');
+    document.getElementById('modal-shift-day').value   = '';
+    document.getElementById('modal-shift-start').value = parts[0]?.trim() || '';
+    document.getElementById('modal-shift-end').value   = parts[1]?.trim() || '';
+    document.getElementById('modal-shift-day').focus();
+    showToast('Tider ifyllda — välj datum och klicka Lägg till.', 'info');
 }
 
 // Feature 4: populate form for editing an existing work session
@@ -485,6 +599,9 @@ function updateCompanyName() {
 function openSettingsModal() {
     document.getElementById('company-name-input').value = localStorage.getItem('tt_company') || '';
 
+    // OT threshold
+    document.getElementById('ot-threshold-input').value = localStorage.getItem('tt_ot_threshold') || '8';
+
     // Feature 8: load OB times
     const obEvening = localStorage.getItem('tt_ob_evening') || '18';
     const obMorning = localStorage.getItem('tt_ob_morning') || '7';
@@ -501,6 +618,10 @@ function saveSettings() {
     const name = document.getElementById('company-name-input').value.trim();
     if (name) localStorage.setItem('tt_company', name);
     else      localStorage.removeItem('tt_company');
+
+    // OT threshold
+    const otThr = parseFloat(document.getElementById('ot-threshold-input').value);
+    if (!isNaN(otThr) && otThr > 0) localStorage.setItem('tt_ot_threshold', otThr.toString());
 
     // Feature 8: save OB times
     const obEvening = document.getElementById('ob-evening-input').value;

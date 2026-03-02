@@ -1,13 +1,45 @@
 // ================================================================
 // ADMIN-VY & LÖNEPERIODER
 // ================================================================
+let _sortCol = null;
+let _sortDir = 1; // 1 = asc, -1 = desc
+
+function sortTable(col) {
+    if (_sortCol === col) _sortDir *= -1;
+    else { _sortCol = col; _sortDir = 1; }
+    loadAdminData();
+}
+
 function loadAdminData() {
     const tbody = document.getElementById('payroll-body'); tbody.innerHTML = '';
     const chartLabels = [], chartRegularPay = [], chartOBPay = [];
 
     renderLogs();
 
-    employees.filter(e => e.role !== 'admin').forEach(emp => {
+    // Update sort indicators
+    ['name', 'hours', 'ob', 'gross'].forEach(col => {
+        const el = document.getElementById(`sort-${col}`);
+        if (el) el.innerText = _sortCol === col ? (_sortDir === 1 ? '▲' : '▼') : '';
+    });
+
+    let emps = employees.filter(e => e.role !== 'admin');
+
+    if (_sortCol) {
+        emps = [...emps].sort((a, b) => {
+            if (_sortCol === 'name') return _sortDir * a.name.localeCompare(b.name, 'sv');
+            const hA = getFilteredHistory(a), hB = getFilteredHistory(b);
+            const sum = (hist, field) => hist.reduce((s, h) => s + (h[field] || 0), 0);
+            const gross = (emp, hist) => {
+                const t = sum(hist, 'hours'), o = sum(hist, 'obHours'), ot = sum(hist, 'otHours');
+                return (t * emp.wage) + (o * emp.wage * 1.5) + (ot * emp.wage * 0.5);
+            };
+            const valA = _sortCol === 'hours' ? sum(hA, 'hours') : _sortCol === 'ob' ? sum(hA, 'obHours') : gross(a, hA);
+            const valB = _sortCol === 'hours' ? sum(hB, 'hours') : _sortCol === 'ob' ? sum(hB, 'obHours') : gross(b, hB);
+            return _sortDir * (valA - valB);
+        });
+    }
+
+    emps.forEach(emp => {
         const hist = getFilteredHistory(emp);
         let totHrs = 0, obHrs = 0, otHrs = 0;
         hist.forEach(s => { totHrs += s.hours; obHrs += s.obHours; otHrs += (s.otHours || 0); });
@@ -84,6 +116,24 @@ function exportCSV() {
     link.setAttribute("download", "Lonelista_Pro.csv");
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
     showToast("CSV nedladdad!", "success");
+}
+
+// ================================================================
+// BULK-EXPORT ALLA ANSTÄLLDA (Feature 3)
+// ================================================================
+function exportAllCSV() {
+    let csv = "data:text/csv;charset=utf-8,Namn;Datum;Vanlig Tid(h);OB(h);Övertid(h);Rast(min);Bruttolön(kr);Kommentar\n";
+    employees.filter(e => e.role !== 'admin').forEach(emp => {
+        [...emp.workedHistory].sort((a, b) => b.date.localeCompare(a.date)).forEach(s => {
+            const pay = (s.hours * emp.wage) + (s.obHours * emp.wage * 1.5) + ((s.otHours || 0) * emp.wage * 0.5);
+            csv += `${emp.name};${s.date};${s.hours.toFixed(2)};${s.obHours.toFixed(2)};${(s.otHours || 0).toFixed(2)};${s.breakMinutes || 0};${Math.round(pay)};"${(s.note || '').replace(/"/g, '""')}"\n`;
+        });
+    });
+    const link = document.createElement('a');
+    link.setAttribute('href', encodeURI(csv));
+    link.setAttribute('download', `historik_alla_${new Date().toLocaleDateString('sv-SE')}.csv`);
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    showToast('Alla historiker exporterade!', 'success');
 }
 
 // ================================================================

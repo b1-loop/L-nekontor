@@ -89,6 +89,7 @@ function renderScheduleList() {
             <div><strong>${shift.day}</strong> <span style="margin-left:10px; color:var(--text-muted);">${shift.time}</span></div>
             <div style="display:flex;gap:0.25rem;align-items:center;">
                 ${completeBtn}
+                <button class="btn-sm btn-edit" style="padding:0.4rem 0.6rem;" onclick="duplicateShiftWorker(${origIdx})" title="Duplicera pass">📋</button>
                 <button class="btn-sm btn-delete" onclick="deleteShiftWorker(${origIdx})">✖ Ta bort</button>
             </div>
         </li>`;
@@ -223,7 +224,8 @@ function clockOut() {
     const alreadyToday = currentUser.workedHistory
         .filter(s => s.date === today)
         .reduce((sum, s) => sum + s.hours + s.obHours, 0);
-    const otHours = Math.max(0, alreadyToday + totalHrs - 8);
+    const otThreshold = parseFloat(localStorage.getItem('tt_ot_threshold') || '8');
+    const otHours = Math.max(0, alreadyToday + totalHrs - otThreshold);
 
     currentUser.workedHistory.push({
         date: today, hours: split.regularHours, obHours: split.obHours,
@@ -285,6 +287,17 @@ function addShift() {
     saveData(); loadWorkerView(); showToast("Pass tillagt!", "success");
 }
 
+function duplicateShiftWorker(idx) {
+    const shift = currentUser.schedule[idx];
+    if (!shift) return;
+    const parts = shift.time.split(' - ');
+    document.getElementById('new-shift-day').value   = new Date().toISOString().slice(0, 10);
+    document.getElementById('new-shift-start').value = parts[0]?.trim() || '';
+    document.getElementById('new-shift-end').value   = parts[1]?.trim() || '';
+    document.getElementById('new-shift-day').focus();
+    showToast('Tider ifyllda — välj datum och klicka Lägg till.', 'info');
+}
+
 function deleteShiftWorker(i) {
     currentUser.schedule.splice(i, 1);
     saveData(); loadWorkerView(); showToast("Pass borttaget", "warning");
@@ -311,7 +324,8 @@ function completeScheduledShift(index) {
     const alreadyThatDay = currentUser.workedHistory
         .filter(s => s.date === shift.day)
         .reduce((sum, s) => sum + s.hours + s.obHours, 0);
-    const otHours = Math.max(0, alreadyThatDay + totalHrs - 8);
+    const otThreshold = parseFloat(localStorage.getItem('tt_ot_threshold') || '8');
+    const otHours = Math.max(0, alreadyThatDay + totalHrs - otThreshold);
 
     currentUser.workedHistory.push({
         date: shift.day, hours: split.regularHours, obHours: split.obHours,

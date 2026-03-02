@@ -145,9 +145,12 @@
                     </div>
 
                     <div class="card" style="overflow-x: auto;">
-                        <h3 style="align-items: center; display: flex; justify-content: space-between;">
+                        <h3 style="align-items: center; display: flex; justify-content: space-between; flex-wrap:wrap; gap:0.5rem;">
                             💰 Löneöversikt
-                            <button class="btn btn-export" onclick="exportCSV()">📥 Exportera CSV</button>
+                            <div style="display:flex; gap:0.5rem;">
+                                <button class="btn btn-export" style="font-size:0.8rem; padding:0.4rem 0.8rem;" onclick="exportAllCSV()">📥 Alla (CSV)</button>
+                                <button class="btn btn-export" onclick="exportCSV()">📥 Exportera CSV</button>
+                            </div>
                         </h3>
                         <div class="period-filter-row">
                             <label>Löneperiod:</label>
@@ -160,7 +163,14 @@
                         <input type="text" id="search-employee" class="search-bar" placeholder="Sök efter anställd..." onkeyup="filterTable()">
                         <table style="min-width: 550px;">
                             <thead>
-                                <tr><th>Anställd</th><th>Status</th><th>Vanlig Tid</th><th>OB</th><th>Bruttolön</th><th>Åtgärd</th></tr>
+                                <tr>
+                                    <th onclick="sortTable('name')"  style="cursor:pointer; user-select:none;">Anställd <span id="sort-name"  style="font-size:0.7rem;"></span></th>
+                                    <th>Status</th>
+                                    <th onclick="sortTable('hours')" style="cursor:pointer; user-select:none;">Vanlig Tid <span id="sort-hours" style="font-size:0.7rem;"></span></th>
+                                    <th onclick="sortTable('ob')"    style="cursor:pointer; user-select:none;">OB <span id="sort-ob"    style="font-size:0.7rem;"></span></th>
+                                    <th onclick="sortTable('gross')" style="cursor:pointer; user-select:none;">Bruttolön <span id="sort-gross" style="font-size:0.7rem;"></span></th>
+                                    <th>Åtgärd</th>
+                                </tr>
                             </thead>
                             <tbody id="payroll-body"></tbody>
                         </table>
@@ -221,6 +231,7 @@
 
             <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                 <button class="btn btn-primary" style="flex: 2;" onclick="saveEmployeeEdit()">Spara Grunduppgifter</button>
+                <button class="btn" style="background: #10b981; flex: 1;" onclick="resetVacationDays()">🔄 Återställ semester</button>
                 <button class="btn" style="background: #ef4444; flex: 1;" onclick="clearEmployeeHistory()">🗑️ Rensa historik</button>
             </div>
 
@@ -287,6 +298,13 @@
             <button class="btn btn-primary" onclick="saveSettings()">💾 Spara inställningar</button>
 
             <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--card-border);">
+            <h4 style="margin: 0 0 0.6rem;">⏱️ Övertidsgräns (h/dag)</h4>
+            <div class="form-group" style="margin-bottom:0.25rem; max-width:140px;">
+                <input type="number" id="ot-threshold-input" min="1" max="24" step="0.5" value="8">
+            </div>
+            <small style="color:var(--text-muted);">Övertid räknas efter X timmar per dag. Standard: 8h.</small>
+
+            <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--card-border);">
             <h4 style="margin: 0 0 0.6rem;">⏰ OB-tider (vardagar)</h4>
             <div style="display:flex; gap:1rem; margin-bottom:0.5rem;">
                 <div class="form-group" style="flex:1; margin-bottom:0;"><label for="ob-evening-input">OB börjar (kväll)</label><input type="time" id="ob-evening-input" value="18:00"></div>
@@ -318,6 +336,13 @@
                 <h2 id="history-modal-title" style="margin:0; color:#3b82f6;">Historik</h2>
                 <button class="btn btn-export" onclick="exportEmployeeCSV()">📥 Exportera CSV</button>
             </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-bottom:0.5rem;">
+                <span style="font-size:0.85rem; color:var(--text-muted);">Filtrera:</span>
+                <input type="date" id="hist-from" style="padding:0.4rem 0.6rem; border-radius:8px; border:1px solid var(--input-border); background:var(--input-bg); color:var(--text-color); font-size:0.85rem;" oninput="openHistoryModal(_historyEmpId)">
+                <span style="font-size:0.85rem; color:var(--text-muted);">—</span>
+                <input type="date" id="hist-to" style="padding:0.4rem 0.6rem; border-radius:8px; border:1px solid var(--input-border); background:var(--input-bg); color:var(--text-color); font-size:0.85rem;" oninput="openHistoryModal(_historyEmpId)">
+                <button class="btn-sm" style="background:#64748b;" onclick="clearHistoryFilter()">✖ Rensa</button>
+            </div>
             <p id="history-modal-summary" style="color:var(--text-muted); margin-top:0.25rem;"></p>
 
             <div style="overflow-x:auto;">
@@ -327,6 +352,14 @@
                 </table>
             </div>
             <p id="history-modal-empty" style="color:var(--text-muted); text-align:center; padding:2rem; display:none;">Ingen historik registrerad.</p>
+
+            <!-- Årsdiagram per anställd -->
+            <div id="history-chart-section" class="hidden" style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--card-border);">
+                <h4 style="margin:0 0 0.75rem;">📈 Lön per månad</h4>
+                <div style="position:relative; height:180px;">
+                    <canvas id="history-emp-chart"></canvas>
+                </div>
+            </div>
 
             <!-- Feature 10: frånvarohistorik -->
             <div id="history-absence-section" class="hidden" style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--card-border);">
