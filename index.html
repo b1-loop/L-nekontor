@@ -66,7 +66,10 @@
             <div id="worker-view" class="hidden">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                     <h2 id="welcome-message" style="margin: 0;">Din stämpelklocka</h2>
-                    <button class="btn btn-secondary" style="width: auto; margin:0;" onclick="openPayslipModal()">🧾 Visa Lönespecifikation</button>
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                        <button class="btn btn-secondary" style="width: auto; margin:0;" onclick="openMyPayslipsModal()">📋 Mina lönespecar</button>
+                        <button class="btn btn-secondary" style="width: auto; margin:0;" onclick="openPayslipModal()">🧾 Visa Lönespecifikation</button>
+                    </div>
                 </div>
 
                 <div class="card" style="margin-top: 1rem;">
@@ -84,6 +87,27 @@
                         <div class="stat-box"><span>Bruttolön</span><strong id="worker-earned">0 kr</strong></div>
                         <div class="stat-box"><span>Semesterdagar kvar</span><strong id="worker-vacation-days" style="color: #10b981;">25</strong></div>
                         <div class="stat-box"><span>Sjukdagar</span><strong id="worker-sick-days" style="color: #ef4444;">0</strong></div>
+                    </div>
+
+                    <!-- Feature 1: Inkomstgraf -->
+                    <div id="worker-chart-section" class="hidden" style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--card-border);">
+                        <h4 style="margin:0 0 0.75rem;">📈 Inkomst per månad</h4>
+                        <div style="position:relative; height:160px;">
+                            <canvas id="worker-income-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Feature 4: Frånvarokommentar-prompt -->
+                    <div id="absence-prompt" class="hidden"
+                         style="margin-top:1.25rem; background:var(--stat-bg); border-radius:8px; border:1px solid var(--card-border); padding:1rem;">
+                        <label id="absence-type-label" style="font-size:0.9rem; font-weight:700; display:block; margin-bottom:0.5rem;"></label>
+                        <input type="text" id="absence-comment-input"
+                               style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--input-border); background:var(--input-bg); color:var(--text-color); box-sizing:border-box;"
+                               placeholder="Valfri kommentar (t.ex. orsak, läkarmöte...)">
+                        <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
+                            <button class="btn btn-primary" style="flex:1;" onclick="confirmAbsence()">Bekräfta</button>
+                            <button class="btn btn-secondary" style="flex:1;" onclick="cancelAbsence()">Avbryt</button>
+                        </div>
                     </div>
                 </div>
 
@@ -165,7 +189,8 @@
                     <div class="card" style="overflow-x: auto;">
                         <h3 style="align-items: center; display: flex; justify-content: space-between; flex-wrap:wrap; gap:0.5rem;">
                             💰 Löneöversikt
-                            <div style="display:flex; gap:0.5rem;">
+                            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                <button class="btn btn-export" style="font-size:0.8rem; padding:0.4rem 0.8rem;" onclick="exportPersonnelCSV()">👥 Personal (CSV)</button>
                                 <button class="btn btn-export" style="font-size:0.8rem; padding:0.4rem 0.8rem;" onclick="exportAllCSV()">📥 Alla (CSV)</button>
                                 <button class="btn btn-export" onclick="exportCSV()">📥 Exportera CSV</button>
                             </div>
@@ -413,6 +438,16 @@
                     <button id="manual-session-cancel" class="btn" style="width:auto; white-space:nowrap; display:none;" onclick="cancelEditSession()">Avbryt</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- ===== MY PAYSLIPS MODAL ===== -->
+    <div id="my-payslips-modal" class="modal">
+        <div class="modal-content" style="max-width: 480px;">
+            <button class="modal-close" onclick="closeMyPayslipsModal()">✖</button>
+            <h2 style="margin-top:0; color:#3b82f6;">📋 Mina Lönespecar</h2>
+            <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0;">Öppna Lönespecifikation för att spara aktuell period.</p>
+            <ul id="my-payslips-list" class="log-list" style="max-height:340px; overflow-y:auto;"></ul>
         </div>
     </div>
 

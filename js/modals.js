@@ -383,21 +383,30 @@ function openHistoryModal(id) {
     if (vacHist.length || sickHist.length) {
         absSection.classList.remove('hidden');
         let absHtml = '';
+        const fmtEntry = (entry, type) => {
+            const d = typeof entry === 'string' ? entry : entry.date;
+            const c = typeof entry === 'string' ? '' : entry.comment;
+            const commentPart = c ? ` <span style="color:var(--text-muted); font-size:0.8rem;">(${c})</span>` : '';
+            const delBtn = isAdmin
+                ? ` <button class="btn-sm btn-delete" style="padding:0.15rem 0.4rem; font-size:0.7rem;" onclick="removeAbsenceDate('${id}','${type}','${d}')">✖</button>`
+                : '';
+            return `<span style="display:inline-block; margin-bottom:0.2rem;">${d}${commentPart}${delBtn}</span>`;
+        };
         if (vacHist.length) {
-            const vacDates = [...vacHist].sort().reverse()
-                .map(d => isAdmin
-                    ? `${d} <button class="btn-sm btn-delete" style="padding:0.15rem 0.4rem; font-size:0.7rem;" onclick="removeAbsenceDate('${id}','vacation','${d}')">✖</button>`
-                    : d)
-                .join('&ensp;');
-            absHtml += `<p style="margin:0 0 0.4rem;"><strong>🏖️ Semester (${vacHist.length} dag${vacHist.length !== 1 ? 'ar' : ''}):</strong> ${vacDates}</p>`;
+            const vacDates = [...vacHist].sort((a, b) => {
+                const da = typeof a === 'string' ? a : a.date;
+                const db = typeof b === 'string' ? b : b.date;
+                return db.localeCompare(da);
+            }).map(e => fmtEntry(e, 'vacation')).join('&ensp;');
+            absHtml += `<p style="margin:0 0 0.4rem;"><strong>🏖️ Semester (${vacHist.length} dag${vacHist.length !== 1 ? 'ar' : ''}):</strong><br>${vacDates}</p>`;
         }
         if (sickHist.length) {
-            const sickDates = [...sickHist].sort().reverse()
-                .map(d => isAdmin
-                    ? `${d} <button class="btn-sm btn-delete" style="padding:0.15rem 0.4rem; font-size:0.7rem;" onclick="removeAbsenceDate('${id}','sick','${d}')">✖</button>`
-                    : d)
-                .join('&ensp;');
-            absHtml += `<p style="margin:0;"><strong>🤒 Sjukdagar (${sickHist.length}):</strong> ${sickDates}</p>`;
+            const sickDates = [...sickHist].sort((a, b) => {
+                const da = typeof a === 'string' ? a : a.date;
+                const db = typeof b === 'string' ? b : b.date;
+                return db.localeCompare(da);
+            }).map(e => fmtEntry(e, 'sick')).join('&ensp;');
+            absHtml += `<p style="margin:0;"><strong>🤒 Sjukdagar (${sickHist.length}):</strong><br>${sickDates}</p>`;
         }
         document.getElementById('history-absence-content').innerHTML = absHtml;
     } else {
@@ -455,10 +464,10 @@ function removeAbsenceDate(empId, type, date) {
     const emp = employees.find(e => e.id === empId);
     if (!emp) return;
     if (type === 'vacation') {
-        const idx = emp.vacationHistory.indexOf(date);
+        const idx = emp.vacationHistory.findIndex(e => (typeof e === 'string' ? e : e.date) === date);
         if (idx > -1) { emp.vacationHistory.splice(idx, 1); emp.vacationDaysLeft = (emp.vacationDaysLeft || 0) + 1; }
     } else {
-        const idx = emp.sickHistory.indexOf(date);
+        const idx = emp.sickHistory.findIndex(e => (typeof e === 'string' ? e : e.date) === date);
         if (idx > -1) { emp.sickHistory.splice(idx, 1); emp.sickDaysUsed = Math.max(0, (emp.sickDaysUsed || 0) - 1); }
     }
     saveData();
@@ -466,6 +475,29 @@ function removeAbsenceDate(empId, type, date) {
     openHistoryModal(empId);
     showToast('Frånvarodag borttagen.', 'success');
 }
+
+// Feature: view own saved payslips (worker)
+function openMyPayslipsModal() {
+    const myPayslips = savedPayslips.filter(p => p.empId === currentUser.id);
+    const list = document.getElementById('my-payslips-list');
+    if (!myPayslips.length) {
+        list.innerHTML = '<li><em style="color:var(--text-muted)">Inga sparade lönespecar ännu. Öppna lönespecifikationen för att spara en.</em></li>';
+    } else {
+        list.innerHTML = myPayslips.map(p => `<li>
+            <div>
+                <strong>${p.month}</strong>
+                <span style="color:var(--text-muted); font-size:0.85rem; margin-left:0.5rem;">${new Date(p.savedAt).toLocaleDateString('sv-SE')}</span>
+            </div>
+            <div style="text-align:right; font-size:0.9rem;">
+                <div style="color:var(--text-muted);">${Math.round(p.gross || 0).toLocaleString('sv-SE')} kr brutto</div>
+                <div style="color:#10b981; font-weight:700;">${Math.round(p.net || 0).toLocaleString('sv-SE')} kr netto</div>
+            </div>
+        </li>`).join('');
+    }
+    document.getElementById('my-payslips-modal').classList.add('active');
+}
+
+function closeMyPayslipsModal() { document.getElementById('my-payslips-modal').classList.remove('active'); }
 
 // Feature 5: reset vacation days to 25
 async function resetVacationDays() {

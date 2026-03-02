@@ -137,6 +137,21 @@ function exportAllCSV() {
 }
 
 // ================================================================
+// PERSONALREGISTER EXPORT
+// ================================================================
+function exportPersonnelCSV() {
+    let csv = "data:text/csv;charset=utf-8,Namn;Personnummer;Telefon;E-post;Gatuadress;Postnummer;Stad;Timlön(kr);Status\n";
+    employees.filter(e => e.role !== 'admin').forEach(emp => {
+        csv += `"${emp.name}";"${emp.personnummer || ''}";"${emp.phone || ''}";"${emp.email || ''}";"${emp.address || ''}";"${emp.postalCode || ''}";"${emp.city || ''}";${emp.wage};"${emp.status}"\n`;
+    });
+    const link = document.createElement('a');
+    link.setAttribute('href', encodeURI(csv));
+    link.setAttribute('download', `personalregister_${new Date().toLocaleDateString('sv-SE')}.csv`);
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    showToast('Personalregister exporterat!', 'success');
+}
+
+// ================================================================
 // DIAGRAM
 // ================================================================
 function updateChart(labels, regularData, obData) {

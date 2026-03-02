@@ -65,6 +65,37 @@ function loadWorkerView() {
 
     // Feature 1 & 7: render schedule (list or calendar)
     renderScheduleSection();
+    renderWorkerChart();
+}
+
+function renderWorkerChart() {
+    const monthly = {};
+    currentUser.workedHistory.forEach(s => {
+        const m = s.date.slice(0, 7);
+        if (!monthly[m]) monthly[m] = 0;
+        monthly[m] += (s.hours * currentUser.wage) + (s.obHours * currentUser.wage * 1.5) + ((s.otHours || 0) * currentUser.wage * 0.5);
+    });
+    const months = Object.keys(monthly).sort();
+    const chartSection = document.getElementById('worker-chart-section');
+    if (!months.length) { chartSection.classList.add('hidden'); return; }
+    chartSection.classList.remove('hidden');
+    const labels = months.map(m => new Date(m + '-01').toLocaleDateString('sv-SE', { month: 'short', year: '2-digit' }));
+    const data   = months.map(m => Math.round(monthly[m]));
+    if (window.workerIncomeChart) window.workerIncomeChart.destroy();
+    const ctx  = document.getElementById('worker-income-chart').getContext('2d');
+    const dark = document.body.classList.contains('dark-mode');
+    window.workerIncomeChart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels, datasets: [{ label: 'Bruttolön (kr)', data, backgroundColor: '#10b981', borderRadius: 4 }] },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: dark ? '#94a3b8' : '#64748b' } },
+                y: { border: { display: false }, ticks: { color: dark ? '#94a3b8' : '#64748b' } }
+            }
+        }
+    });
 }
 
 // ================================================================
@@ -163,8 +194,8 @@ function updateWorkerControls() {
         timerEl.style.display = 'none';
         btnContainer.innerHTML = `
             <button class="btn btn-in"    onclick="clockIn()">▶ Klocka In (GPS)</button>
-            <button class="btn btn-sick"  onclick="setStatus('Sjuk')">🤒 Sjuk</button>
-            <button class="btn btn-leave" onclick="setStatus('Semester')">🏖️ Ledighet</button>
+            <button class="btn btn-sick"  onclick="promptAbsence('Sjuk')">🤒 Sjuk</button>
+            <button class="btn btn-leave" onclick="promptAbsence('Semester')">🏖️ Ledighet</button>
         `;
     } else if (currentUser.status === 'Inloggad') {
         timerEl.style.display = 'block'; startLiveTimer();
@@ -270,18 +301,41 @@ function saveSessionNote() {
 }
 
 // Feature 10: track absence dates
-function setStatus(status) {
+let _absenceType = null;
+
+function promptAbsence(type) {
+    _absenceType = type;
+    const label = type === 'Sjuk' ? '🤒 Sjukanmälan' : '🏖️ Ledighetsmarkering';
+    document.getElementById('absence-type-label').innerText = label;
+    document.getElementById('absence-comment-input').value = '';
+    document.getElementById('absence-prompt').classList.remove('hidden');
+}
+
+function confirmAbsence() {
+    if (!_absenceType) return;
+    const comment = document.getElementById('absence-comment-input').value.trim();
+    const type = _absenceType;
+    cancelAbsence();
+    setStatus(type, comment);
+}
+
+function cancelAbsence() {
+    _absenceType = null;
+    document.getElementById('absence-prompt').classList.add('hidden');
+}
+
+function setStatus(status, comment = '') {
     if (status === 'Semester') {
         const left = currentUser.vacationDaysLeft ?? 25;
         if (left <= 0) return showToast("Inga semesterdagar kvar!", "error");
         currentUser.vacationDaysLeft = left - 1;
         if (!currentUser.vacationHistory) currentUser.vacationHistory = [];
-        currentUser.vacationHistory.push(new Date().toISOString().slice(0, 10));
+        currentUser.vacationHistory.push({ date: new Date().toISOString().slice(0, 10), comment });
     }
     if (status === 'Sjuk') {
         currentUser.sickDaysUsed = (currentUser.sickDaysUsed ?? 0) + 1;
         if (!currentUser.sickHistory) currentUser.sickHistory = [];
-        currentUser.sickHistory.push(new Date().toISOString().slice(0, 10));
+        currentUser.sickHistory.push({ date: new Date().toISOString().slice(0, 10), comment });
     }
     currentUser.status = status;
     addLog(`Satte status: ${status}`);

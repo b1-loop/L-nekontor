@@ -27,6 +27,9 @@ employees.forEach(emp => {
     if (emp.sickDaysUsed     === undefined) emp.sickDaysUsed     = 0;
     if (emp.vacationHistory  === undefined) emp.vacationHistory  = [];
     if (emp.sickHistory      === undefined) emp.sickHistory      = [];
+    // Migrate absence arrays from strings to {date, comment} objects
+    emp.vacationHistory = emp.vacationHistory.map(e => typeof e === 'string' ? { date: e, comment: '' } : e);
+    emp.sickHistory     = emp.sickHistory.map(e => typeof e === 'string'     ? { date: e, comment: '' } : e);
     if (emp.phone            === undefined) emp.phone            = '';
     if (emp.email            === undefined) emp.email            = '';
     if (emp.address          === undefined) emp.address          = '';
