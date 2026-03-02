@@ -86,7 +86,7 @@ function addEmployee() {
     if (!name || !pin || isNaN(wage)) return showToast("Fyll i namn, PIN och lön.", "warning");
     if (employees.find(e => e.pin === pin)) return showToast("PIN-koden används redan!", "error");
 
-    employees.push({ id: Date.now().toString(), name, pin, role: "worker", wage, status: "Utloggad", activeSession: null, workedHistory: [], schedule: [], vacationDaysLeft: 25, sickDaysUsed: 0 });
+    employees.push({ id: Date.now().toString(), name, pin, role: "worker", wage, status: "Utloggad", activeSession: null, workedHistory: [], schedule: [], vacationDaysLeft: 25, sickDaysUsed: 0, vacationHistory: [], sickHistory: [], personnummer: '', phone: '', email: '', address: '', postalCode: '', city: '' });
     document.getElementById('new-name').value = '';
     document.getElementById('new-pin').value  = '';
     document.getElementById('new-wage').value = '';

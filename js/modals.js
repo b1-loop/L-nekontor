@@ -121,6 +121,7 @@ function saveEmployeeEdit() {
     const newWage     = parseInt(document.getElementById('edit-wage').value);
     const newVacation = parseInt(document.getElementById('edit-vacation-days').value);
 
+    if (!emp) return showToast("Anställd ej hittad.", "error");
     if (!newName || !newPin || isNaN(newWage)) return showToast("Fyll i alla fält.", "warning");
     if (employees.find(e => e.pin === newPin && e.id !== id)) return showToast("PIN-koden används redan!", "error");
 
@@ -128,12 +129,12 @@ function saveEmployeeEdit() {
     emp.pin          = newPin;
     emp.wage         = newWage;
     if (!isNaN(newVacation)) emp.vacationDaysLeft = newVacation;
-    emp.personnummer = document.getElementById('edit-personnummer').value.trim();
-    emp.phone        = document.getElementById('edit-phone').value.trim();
-    emp.email        = document.getElementById('edit-email').value.trim();
-    emp.address      = document.getElementById('edit-address').value.trim();
-    emp.postalCode   = document.getElementById('edit-postal').value.trim();
-    emp.city         = document.getElementById('edit-city').value.trim();
+    emp.personnummer = (document.getElementById('edit-personnummer')?.value || '').trim();
+    emp.phone        = (document.getElementById('edit-phone')?.value        || '').trim();
+    emp.email        = (document.getElementById('edit-email')?.value        || '').trim();
+    emp.address      = (document.getElementById('edit-address')?.value      || '').trim();
+    emp.postalCode   = (document.getElementById('edit-postal')?.value       || '').trim();
+    emp.city         = (document.getElementById('edit-city')?.value         || '').trim();
 
     saveData(); loadAdminData(); showToast("Uppgifter sparade!", "success"); closeEditModal();
 }

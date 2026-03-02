@@ -50,12 +50,18 @@ function loadWorkerView() {
     if (dayInput && !dayInput.value) dayInput.value = new Date().toISOString().slice(0, 10);
 
     // Fill profile form
-    document.getElementById('profile-personnummer').value = currentUser.personnummer || '';
-    document.getElementById('profile-phone').value        = currentUser.phone        || '';
-    document.getElementById('profile-email').value        = currentUser.email        || '';
-    document.getElementById('profile-address').value      = currentUser.address      || '';
-    document.getElementById('profile-postal').value       = currentUser.postalCode   || '';
-    document.getElementById('profile-city').value         = currentUser.city         || '';
+    const _pn = document.getElementById('profile-personnummer');
+    const _pp = document.getElementById('profile-phone');
+    const _pe = document.getElementById('profile-email');
+    const _pa = document.getElementById('profile-address');
+    const _po = document.getElementById('profile-postal');
+    const _pc = document.getElementById('profile-city');
+    if (_pn) _pn.value = currentUser.personnummer || '';
+    if (_pp) _pp.value = currentUser.phone        || '';
+    if (_pe) _pe.value = currentUser.email        || '';
+    if (_pa) _pa.value = currentUser.address      || '';
+    if (_po) _po.value = currentUser.postalCode   || '';
+    if (_pc) _pc.value = currentUser.city         || '';
 
     // Feature 1 & 7: render schedule (list or calendar)
     renderScheduleSection();
@@ -283,22 +289,13 @@ function setStatus(status) {
 }
 
 function saveProfile() {
-    currentUser.personnummer = document.getElementById('profile-personnummer').value.trim();
-    currentUser.phone        = document.getElementById('profile-phone').value.trim();
-    currentUser.email        = document.getElementById('profile-email').value.trim();
-    currentUser.address      = document.getElementById('profile-address').value.trim();
-    currentUser.postalCode   = document.getElementById('profile-postal').value.trim();
-    currentUser.city         = document.getElementById('profile-city').value.trim();
-
-    const emp = employees.find(e => e.id === currentUser.id);
-    if (emp) {
-        emp.personnummer = currentUser.personnummer;
-        emp.phone        = currentUser.phone;
-        emp.email        = currentUser.email;
-        emp.address      = currentUser.address;
-        emp.postalCode   = currentUser.postalCode;
-        emp.city         = currentUser.city;
-    }
+    if (!currentUser) return;
+    currentUser.personnummer = (document.getElementById('profile-personnummer')?.value || '').trim();
+    currentUser.phone        = (document.getElementById('profile-phone')?.value        || '').trim();
+    currentUser.email        = (document.getElementById('profile-email')?.value        || '').trim();
+    currentUser.address      = (document.getElementById('profile-address')?.value      || '').trim();
+    currentUser.postalCode   = (document.getElementById('profile-postal')?.value       || '').trim();
+    currentUser.city         = (document.getElementById('profile-city')?.value         || '').trim();
     saveData();
     showToast('Profil sparad!', 'success');
 }
