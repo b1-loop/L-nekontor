@@ -23,10 +23,16 @@ let savedPayslips     = JSON.parse(localStorage.getItem(PAYSLIPS_KEY)) || [];
 
 // Migrate existing employees — add new fields if missing
 employees.forEach(emp => {
-    if (emp.vacationDaysLeft === undefined) emp.vacationDaysLeft = 25;
-    if (emp.sickDaysUsed    === undefined) emp.sickDaysUsed    = 0;
-    if (emp.vacationHistory  === undefined) emp.vacationHistory = [];
-    if (emp.sickHistory      === undefined) emp.sickHistory     = [];
+    if (emp.vacationDaysLeft  === undefined) emp.vacationDaysLeft  = 25;
+    if (emp.sickDaysUsed     === undefined) emp.sickDaysUsed     = 0;
+    if (emp.vacationHistory  === undefined) emp.vacationHistory  = [];
+    if (emp.sickHistory      === undefined) emp.sickHistory      = [];
+    if (emp.phone            === undefined) emp.phone            = '';
+    if (emp.email            === undefined) emp.email            = '';
+    if (emp.address          === undefined) emp.address          = '';
+    if (emp.postalCode       === undefined) emp.postalCode       = '';
+    if (emp.city             === undefined) emp.city             = '';
+    if (emp.personnummer     === undefined) emp.personnummer     = '';
     emp.workedHistory.forEach(s => {
         if (s.otHours      === undefined) s.otHours      = 0;
         if (s.breakMinutes === undefined) s.breakMinutes = 0;

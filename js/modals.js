@@ -101,6 +101,12 @@ function openEditModal(id) {
     document.getElementById('edit-pin').value              = emp.pin;
     document.getElementById('edit-wage').value             = emp.wage;
     document.getElementById('edit-vacation-days').value    = emp.vacationDaysLeft ?? 25;
+    document.getElementById('edit-personnummer').value     = emp.personnummer || '';
+    document.getElementById('edit-phone').value            = emp.phone        || '';
+    document.getElementById('edit-email').value            = emp.email        || '';
+    document.getElementById('edit-address').value          = emp.address      || '';
+    document.getElementById('edit-postal').value           = emp.postalCode   || '';
+    document.getElementById('edit-city').value             = emp.city         || '';
     renderModalSchedule(id);
     document.getElementById('edit-modal').classList.add('active');
 }
@@ -118,10 +124,16 @@ function saveEmployeeEdit() {
     if (!newName || !newPin || isNaN(newWage)) return showToast("Fyll i alla fält.", "warning");
     if (employees.find(e => e.pin === newPin && e.id !== id)) return showToast("PIN-koden används redan!", "error");
 
-    emp.name  = newName;
-    emp.pin   = newPin;
-    emp.wage  = newWage;
+    emp.name         = newName;
+    emp.pin          = newPin;
+    emp.wage         = newWage;
     if (!isNaN(newVacation)) emp.vacationDaysLeft = newVacation;
+    emp.personnummer = document.getElementById('edit-personnummer').value.trim();
+    emp.phone        = document.getElementById('edit-phone').value.trim();
+    emp.email        = document.getElementById('edit-email').value.trim();
+    emp.address      = document.getElementById('edit-address').value.trim();
+    emp.postalCode   = document.getElementById('edit-postal').value.trim();
+    emp.city         = document.getElementById('edit-city').value.trim();
 
     saveData(); loadAdminData(); showToast("Uppgifter sparade!", "success"); closeEditModal();
 }

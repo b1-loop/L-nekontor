@@ -45,9 +45,17 @@ function loadWorkerView() {
     document.getElementById('worker-vacation-days').innerText = currentUser.vacationDaysLeft ?? 25;
     document.getElementById('worker-sick-days').innerText     = currentUser.sickDaysUsed ?? 0;
 
-    // Feature 2: autofill today's date
+    // Autofill today's date
     const dayInput = document.getElementById('new-shift-day');
     if (dayInput && !dayInput.value) dayInput.value = new Date().toISOString().slice(0, 10);
+
+    // Fill profile form
+    document.getElementById('profile-personnummer').value = currentUser.personnummer || '';
+    document.getElementById('profile-phone').value        = currentUser.phone        || '';
+    document.getElementById('profile-email').value        = currentUser.email        || '';
+    document.getElementById('profile-address').value      = currentUser.address      || '';
+    document.getElementById('profile-postal').value       = currentUser.postalCode   || '';
+    document.getElementById('profile-city').value         = currentUser.city         || '';
 
     // Feature 1 & 7: render schedule (list or calendar)
     renderScheduleSection();
@@ -272,6 +280,27 @@ function setStatus(status) {
     currentUser.status = status;
     addLog(`Satte status: ${status}`);
     saveData(); loadWorkerView(); showToast(`Status satt till ${status}`);
+}
+
+function saveProfile() {
+    currentUser.personnummer = document.getElementById('profile-personnummer').value.trim();
+    currentUser.phone        = document.getElementById('profile-phone').value.trim();
+    currentUser.email        = document.getElementById('profile-email').value.trim();
+    currentUser.address      = document.getElementById('profile-address').value.trim();
+    currentUser.postalCode   = document.getElementById('profile-postal').value.trim();
+    currentUser.city         = document.getElementById('profile-city').value.trim();
+
+    const emp = employees.find(e => e.id === currentUser.id);
+    if (emp) {
+        emp.personnummer = currentUser.personnummer;
+        emp.phone        = currentUser.phone;
+        emp.email        = currentUser.email;
+        emp.address      = currentUser.address;
+        emp.postalCode   = currentUser.postalCode;
+        emp.city         = currentUser.city;
+    }
+    saveData();
+    showToast('Profil sparad!', 'success');
 }
 
 function addShift() {

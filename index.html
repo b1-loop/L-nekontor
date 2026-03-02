@@ -104,7 +104,8 @@
                     </div>
 
                     <!-- Feature 9: post-clockout note -->
-                    <div id="post-clockout-note" class="hidden" style="margin-top:1.5rem; background:var(--stat-bg); border-radius:8px; border:1px solid var(--card-border); padding:1rem;">
+                    <div id="post-clockout-note" class="hidden"
+                    style="margin-top:1.5rem; background:var(--stat-bg); border-radius:8px; border:1px solid var(--card-border); padding:1rem;">
                         <label style="font-size:0.85rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.5rem;">💬 Kommentar till passet (valfritt)</label>
                         <textarea id="session-note-input" rows="2" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--input-border); background:var(--input-bg); color:var(--text-color); box-sizing:border-box; resize:vertical;" placeholder="T.ex. extra kvällsarbete, vikariat..."></textarea>
                         <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
@@ -112,6 +113,23 @@
                             <button class="btn btn-secondary" style="flex:1;" onclick="document.getElementById('post-clockout-note').classList.add('hidden')">Hoppa över</button>
                         </div>
                     </div>
+
+                </div>
+
+                <div class="card">
+                    <h3>👤 Min Profil</h3>
+                    <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0; margin-bottom:1rem;">Din personliga information — visas för admin.</p>
+                    <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                        <div class="form-group" style="flex:1; min-width:150px;"><label>Personnummer</label><input type="text" id="profile-personnummer" placeholder="ÅÅMMDD-XXXX" maxlength="13"></div>
+                        <div class="form-group" style="flex:1; min-width:140px;"><label>Telefon</label><input type="tel" id="profile-phone" placeholder="070-XXX XX XX"></div>
+                        <div class="form-group" style="flex:1; min-width:180px;"><label>E-post</label><input type="email" id="profile-email" placeholder="namn@exempel.se"></div>
+                    </div>
+                    <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                        <div class="form-group" style="flex:2; min-width:180px;"><label>Gatuadress</label><input type="text" id="profile-address" placeholder="Storgatan 1"></div>
+                        <div class="form-group" style="flex:1; min-width:80px;"><label>Postnummer</label><input type="text" id="profile-postal" placeholder="12345" maxlength="6"></div>
+                        <div class="form-group" style="flex:1; min-width:120px;"><label>Stad</label><input type="text" id="profile-city" placeholder="Stockholm"></div>
+                    </div>
+                    <button class="btn btn-primary" style="width:auto;" onclick="saveProfile()">💾 Spara profil</button>
                 </div>
             </div>
 
@@ -227,6 +245,19 @@
                 <div class="form-group" style="flex: 1; min-width: 90px;"><label for="edit-pin">PIN-kod</label><input type="text" id="edit-pin" maxlength="4"></div>
                 <div class="form-group" style="flex: 1; min-width: 90px;"><label for="edit-wage">Timlön (kr)</label><input type="number" id="edit-wage" min="1"></div>
                 <div class="form-group" style="flex: 1; min-width: 90px;"><label for="edit-vacation-days">Semesterdagar kvar</label><input type="number" id="edit-vacation-days" min="0"></div>
+            </div>
+
+            <hr style="margin: 1.25rem 0; border: none; border-top: 1px solid var(--card-border);">
+            <h4 style="margin: 0 0 0.75rem;">👤 Personuppgifter</h4>
+            <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                <div class="form-group" style="flex:1; min-width:150px;"><label>Personnummer</label><input type="text" id="edit-personnummer" placeholder="ÅÅMMDD-XXXX" maxlength="13"></div>
+                <div class="form-group" style="flex:1; min-width:140px;"><label>Telefon</label><input type="tel" id="edit-phone" placeholder="070-XXX XX XX"></div>
+                <div class="form-group" style="flex:1; min-width:180px;"><label>E-post</label><input type="email" id="edit-email" placeholder="namn@exempel.se"></div>
+            </div>
+            <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                <div class="form-group" style="flex:2; min-width:180px;"><label>Gatuadress</label><input type="text" id="edit-address" placeholder="Storgatan 1"></div>
+                <div class="form-group" style="flex:1; min-width:80px;"><label>Postnummer</label><input type="text" id="edit-postal" placeholder="12345" maxlength="6"></div>
+                <div class="form-group" style="flex:1; min-width:120px;"><label>Stad</label><input type="text" id="edit-city" placeholder="Stockholm"></div>
             </div>
 
             <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
