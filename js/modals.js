@@ -101,6 +101,7 @@ function openEditModal(id) {
     document.getElementById('edit-pin').value              = emp.pin;
     document.getElementById('edit-wage').value             = emp.wage;
     document.getElementById('edit-vacation-days').value    = emp.vacationDaysLeft ?? 25;
+    document.getElementById('edit-startdate').value        = emp.startDate    || '';
     document.getElementById('edit-personnummer').value     = emp.personnummer || '';
     document.getElementById('edit-phone').value            = emp.phone        || '';
     document.getElementById('edit-email').value            = emp.email        || '';
@@ -108,6 +109,7 @@ function openEditModal(id) {
     document.getElementById('edit-postal').value           = emp.postalCode   || '';
     document.getElementById('edit-city').value             = emp.city         || '';
     renderModalSchedule(id);
+    renderModalCertifications(id);
     document.getElementById('edit-modal').classList.add('active');
 }
 
@@ -129,6 +131,7 @@ function saveEmployeeEdit() {
     emp.pin          = newPin;
     emp.wage         = newWage;
     if (!isNaN(newVacation)) emp.vacationDaysLeft = newVacation;
+    emp.startDate    = (document.getElementById('edit-startdate')?.value     || '');
     emp.personnummer = (document.getElementById('edit-personnummer')?.value || '').trim();
     emp.phone        = (document.getElementById('edit-phone')?.value        || '').trim();
     emp.email        = (document.getElementById('edit-email')?.value        || '').trim();
@@ -476,6 +479,57 @@ function removeAbsenceDate(empId, type, date) {
     showToast('Frånvarodag borttagen.', 'success');
 }
 
+// ================================================================
+// CERTIFIKAT & KOMPETENSER
+// ================================================================
+function certDaysLeft(dateStr) {
+    return Math.ceil((new Date(dateStr) - new Date()) / 86400000);
+}
+
+function renderModalCertifications(id) {
+    const emp  = employees.find(e => e.id === id);
+    const list = document.getElementById('modal-cert-list');
+    if (!list) return;
+    const certs = emp.certifications || [];
+    if (!certs.length) {
+        list.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem; margin:0 0 0.5rem;">Inga certifikat registrerade.</p>';
+        return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    list.innerHTML = certs.map((c, i) => {
+        const expired = c.expiryDate && c.expiryDate < today;
+        const soon    = c.expiryDate && !expired && certDaysLeft(c.expiryDate) <= 30;
+        const color   = expired ? '#ef4444' : soon ? '#f97316' : '#10b981';
+        const label   = expired ? `⚠️ Utgången (${c.expiryDate})` : c.expiryDate ? (soon ? `⏰ ${certDaysLeft(c.expiryDate)} dagar kvar` : `✅ t.o.m. ${c.expiryDate}`) : '✅ Inget datum';
+        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:0.4rem 0; border-bottom:1px solid var(--card-border); gap:0.5rem; flex-wrap:wrap;">
+            <div><strong style="font-size:0.9rem;">${c.name}</strong> <span style="color:${color}; font-size:0.8rem;">${label}</span></div>
+            <button class="btn-sm btn-delete" onclick="removeCertification('${id}', ${i})">✖</button>
+        </div>`;
+    }).join('');
+}
+
+function addCertification() {
+    const id   = document.getElementById('edit-emp-id').value;
+    const emp  = employees.find(e => e.id === id);
+    const name = document.getElementById('modal-cert-name').value.trim();
+    const exp  = document.getElementById('modal-cert-expiry').value;
+    if (!name) return showToast('Ange namn på certifikatet.', 'warning');
+    if (!emp.certifications) emp.certifications = [];
+    emp.certifications.push({ id: Date.now().toString(), name, expiryDate: exp });
+    document.getElementById('modal-cert-name').value   = '';
+    document.getElementById('modal-cert-expiry').value = '';
+    saveData(); renderModalCertifications(id);
+    showToast('Certifikat tillagt!', 'success');
+}
+
+function removeCertification(empId, idx) {
+    const emp = employees.find(e => e.id === empId);
+    if (!emp) return;
+    emp.certifications.splice(idx, 1);
+    saveData(); renderModalCertifications(empId);
+    showToast('Certifikat borttaget.', 'warning');
+}
+
 // Feature: view own saved payslips (worker)
 function openMyPayslipsModal() {
     const myPayslips = savedPayslips.filter(p => p.empId === currentUser.id);
@@ -644,6 +698,7 @@ function updateCompanyName() {
 function openSettingsModal() {
     document.getElementById('company-name-input').value  = localStorage.getItem('tt_company')       || '';
     document.getElementById('admin-message-input').value = localStorage.getItem('tt_admin_message') || '';
+    document.getElementById('payday-input').value        = localStorage.getItem('tt_payday')        || '25';
 
     // OT threshold
     document.getElementById('ot-threshold-input').value = localStorage.getItem('tt_ot_threshold') || '8';
@@ -668,6 +723,9 @@ function saveSettings() {
     const msg = document.getElementById('admin-message-input').value.trim();
     if (msg) localStorage.setItem('tt_admin_message', msg);
     else     localStorage.removeItem('tt_admin_message');
+
+    const payday = parseInt(document.getElementById('payday-input').value);
+    if (!isNaN(payday) && payday >= 1 && payday <= 31) localStorage.setItem('tt_payday', payday.toString());
 
     // OT threshold
     const otThr = parseFloat(document.getElementById('ot-threshold-input').value);

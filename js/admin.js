@@ -18,6 +18,7 @@ function loadAdminData() {
     renderOvertimeReport();
     renderSharedCalendar();
     renderPendingRequests();
+    renderCertWarnings();
 
     // Update sort indicators
     ['name', 'hours', 'ob', 'gross'].forEach(col => {
@@ -107,7 +108,7 @@ function addEmployee() {
     if (!name || !pin || isNaN(wage)) return showToast("Fyll i namn, PIN och lön.", "warning");
     if (employees.find(e => e.pin === pin)) return showToast("PIN-koden används redan!", "error");
 
-    employees.push({ id: Date.now().toString(), name, pin, role: "worker", wage, status: "Utloggad", activeSession: null, workedHistory: [], schedule: [], vacationDaysLeft: 25, sickDaysUsed: 0, vacationHistory: [], sickHistory: [], personnummer: '', phone: '', email: '', address: '', postalCode: '', city: '' });
+    employees.push({ id: Date.now().toString(), name, pin, role: "worker", wage, status: "Utloggad", activeSession: null, workedHistory: [], schedule: [], vacationDaysLeft: 25, sickDaysUsed: 0, vacationHistory: [], sickHistory: [], vacationRequests: [], certifications: [], personnummer: '', phone: '', email: '', address: '', postalCode: '', city: '', startDate: '' });
     document.getElementById('new-name').value = '';
     document.getElementById('new-pin').value  = '';
     document.getElementById('new-wage').value = '';
@@ -120,6 +121,38 @@ async function deleteEmployee(id) {
         employees = employees.filter(e => e.id !== id);
         saveData(); loadAdminData(); showToast("Anställd raderad");
     } catch (_) {}
+}
+
+// ================================================================
+// CERTIFIKAT-VARNINGAR
+// ================================================================
+function renderCertWarnings() {
+    const list = document.getElementById('cert-warnings-list');
+    if (!list) return;
+    const today = new Date();
+    const warnings = [];
+    employees.filter(e => e.role !== 'admin').forEach(emp => {
+        (emp.certifications || []).forEach(c => {
+            if (!c.expiryDate) return;
+            const days = Math.ceil((new Date(c.expiryDate) - today) / 86400000);
+            if (days <= 60) warnings.push({ empName: emp.name, certName: c.name, expiryDate: c.expiryDate, days });
+        });
+    });
+    const heading = document.getElementById('cert-warnings-heading');
+    if (heading) heading.innerText = `🎓 Certifikat${warnings.length ? ` (${warnings.length} varning${warnings.length !== 1 ? 'ar' : ''})` : ''}`;
+    if (!warnings.length) {
+        list.innerHTML = '<p style="color:var(--text-muted); padding:0.5rem 0; margin:0;">Inga certifikat löper ut inom 60 dagar.</p>';
+        return;
+    }
+    warnings.sort((a, b) => a.days - b.days);
+    list.innerHTML = warnings.map(w => {
+        const color = w.days < 0 ? '#ef4444' : w.days <= 30 ? '#f97316' : '#f59e0b';
+        const label = w.days < 0 ? `⚠️ Utgick ${w.expiryDate}` : w.days === 0 ? '⚠️ Utgår idag!' : `⏰ ${w.days} dagar kvar (${w.expiryDate})`;
+        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:0.4rem 0; border-bottom:1px solid var(--card-border); flex-wrap:wrap; gap:0.25rem;">
+            <span><strong>${w.empName}</strong> — ${w.certName}</span>
+            <span style="color:${color}; font-weight:700; font-size:0.85rem;">${label}</span>
+        </div>`;
+    }).join('');
 }
 
 // ================================================================
@@ -348,9 +381,9 @@ function exportAllCSV() {
 // PERSONALREGISTER EXPORT
 // ================================================================
 function exportPersonnelCSV() {
-    let csv = "data:text/csv;charset=utf-8,Namn;Personnummer;Telefon;E-post;Gatuadress;Postnummer;Stad;Timlön(kr);Status\n";
+    let csv = "data:text/csv;charset=utf-8,Namn;Personnummer;Telefon;E-post;Gatuadress;Postnummer;Stad;Timlön(kr);Status;Anst.datum\n";
     employees.filter(e => e.role !== 'admin').forEach(emp => {
-        csv += `"${emp.name}";"${emp.personnummer || ''}";"${emp.phone || ''}";"${emp.email || ''}";"${emp.address || ''}";"${emp.postalCode || ''}";"${emp.city || ''}";${emp.wage};"${emp.status}"\n`;
+        csv += `"${emp.name}";"${emp.personnummer || ''}";"${emp.phone || ''}";"${emp.email || ''}";"${emp.address || ''}";"${emp.postalCode || ''}";"${emp.city || ''}";${emp.wage};"${emp.status}";"${emp.startDate || ''}"\n`;
     });
     const link = document.createElement('a');
     link.setAttribute('href', encodeURI(csv));

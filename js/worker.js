@@ -47,6 +47,50 @@ function loadWorkerView() {
     const reqDaysLeft = document.getElementById('req-days-left');
     if (reqDaysLeft) reqDaysLeft.innerText = (currentUser.vacationDaysLeft ?? 25) + ' st';
 
+    // Lönedag-nedräkning
+    const payday = parseInt(localStorage.getItem('tt_payday') || '25');
+    const now2   = new Date();
+    let nextPay  = new Date(now2.getFullYear(), now2.getMonth(), payday);
+    if (nextPay <= now2) nextPay = new Date(now2.getFullYear(), now2.getMonth() + 1, payday);
+    const daysToPayday = Math.ceil((nextPay - now2) / 86400000);
+    const pdEl = document.getElementById('worker-payday-countdown');
+    if (pdEl) pdEl.innerText = daysToPayday === 0 ? '🎉 Idag!' : `${daysToPayday} dagar`;
+
+    // Anställningsdatum
+    const sdEl = document.getElementById('worker-startdate-info');
+    if (sdEl) {
+        if (currentUser.startDate) {
+            const start  = new Date(currentUser.startDate);
+            const months = (now2.getFullYear() - start.getFullYear()) * 12 + now2.getMonth() - start.getMonth();
+            const yrs    = Math.floor(months / 12);
+            const mos    = months % 12;
+            const parts  = [...(yrs > 0 ? [`${yrs} år`] : []), ...(mos > 0 ? [`${mos} mån`] : [])];
+            sdEl.innerText = `📅 Anställd sedan ${currentUser.startDate}${parts.length ? ` (${parts.join(' ')})` : ''}`;
+        } else { sdEl.innerText = ''; }
+    }
+
+    // Egna certifikat (read-only)
+    const certList = document.getElementById('worker-cert-list');
+    if (certList) {
+        const certs = currentUser.certifications || [];
+        if (!certs.length) {
+            certList.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem; margin:0;">Inga certifikat registrerade av admin.</p>';
+        } else {
+            const today = new Date().toISOString().slice(0, 10);
+            certList.innerHTML = certs.map(c => {
+                const expired = c.expiryDate && c.expiryDate < today;
+                const days    = c.expiryDate ? Math.ceil((new Date(c.expiryDate) - new Date()) / 86400000) : null;
+                const soon    = days !== null && !expired && days <= 30;
+                const color   = expired ? '#ef4444' : soon ? '#f97316' : '#10b981';
+                const label   = expired ? `⚠️ Utgången!` : c.expiryDate ? (soon ? `⏰ ${days} dagar kvar` : `✅ t.o.m. ${c.expiryDate}`) : '✅';
+                return `<div style="display:flex; justify-content:space-between; padding:0.35rem 0; border-bottom:1px solid var(--card-border);">
+                    <span style="font-size:0.9rem;">${c.name}</span>
+                    <span style="color:${color}; font-size:0.8rem; font-weight:600;">${label}</span>
+                </div>`;
+            }).join('');
+        }
+    }
+
     // Autofill today's date
     const dayInput = document.getElementById('new-shift-day');
     if (dayInput && !dayInput.value) dayInput.value = new Date().toISOString().slice(0, 10);
