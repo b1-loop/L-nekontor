@@ -95,42 +95,69 @@ function _showTourStep() {
     const target = document.querySelector(step.sel);
 
     if (!target) {
-        // Element not found — skip step
+        // Element not found — hide overlay and skip
+        _hideShades();
         if (_tourIdx < _tourSteps.length - 1) { _tourIdx++; _showTourStep(); }
         else endTour();
         return;
     }
 
-    // Show overlay
-    document.getElementById('tour-overlay').classList.remove('hidden');
-
-    // Instant scroll so getBoundingClientRect is accurate immediately
+    // Instant scroll so getBoundingClientRect is accurate right away
     target.scrollIntoView({ behavior: 'instant', block: 'center' });
     target.classList.add('tour-highlight');
 
+    // Position the 4 overlay panes around the target
+    const pad  = 6;
+    const rect = target.getBoundingClientRect();
+    _positionShades(rect, pad);
+
+    // Fill tooltip content
     const tooltip = document.getElementById('tour-tooltip');
     tooltip.classList.remove('hidden');
-
     document.getElementById('tour-progress').textContent = `Steg ${_tourIdx + 1} av ${_tourSteps.length}`;
     document.getElementById('tour-title').textContent    = step.title;
     document.getElementById('tour-text').textContent     = step.text;
     document.getElementById('tour-prev-btn').style.visibility = _tourIdx === 0 ? 'hidden' : 'visible';
     document.getElementById('tour-next-btn').textContent = _tourIdx === _tourSteps.length - 1 ? 'Avsluta ✓' : 'Nästa →';
 
-    _positionTooltip(target);
+    _positionTooltip(rect);
 }
 
-function _positionTooltip(target) {
+// Position 4 semi-transparent panes that leave a "cutout" around the target
+function _positionShades(rect, pad) {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const x1 = Math.max(0, rect.left  - pad);
+    const y1 = Math.max(0, rect.top   - pad);
+    const x2 = Math.min(vw, rect.right  + pad);
+    const y2 = Math.min(vh, rect.bottom + pad);
+
+    const set = (id, s) => {
+        const el = document.getElementById(id);
+        el.style.cssText = `top:${s.t};left:${s.l};right:${s.r};bottom:${s.b};width:${s.w};height:${s.h};`;
+        el.classList.remove('hidden');
+    };
+
+    set('tour-shade-top',    { t:'0',       l:'0',      r:'0',  b:'',   w:'',          h: y1 + 'px' });
+    set('tour-shade-bottom', { t: y2+'px',  l:'0',      r:'0',  b:'0',  w:'',          h:'' });
+    set('tour-shade-left',   { t: y1+'px',  l:'0',      r:'',   b:'',   w: x1 + 'px', h: (y2-y1) + 'px' });
+    set('tour-shade-right',  { t: y1+'px',  l: x2+'px', r:'0',  b:'',   w:'',          h: (y2-y1) + 'px' });
+}
+
+function _hideShades() {
+    ['tour-shade-top','tour-shade-bottom','tour-shade-left','tour-shade-right']
+        .forEach(id => document.getElementById(id).classList.add('hidden'));
+}
+
+function _positionTooltip(rect) {
     const tooltip = document.getElementById('tour-tooltip');
-    const rect    = target.getBoundingClientRect();
     const tw      = tooltip.offsetWidth  || 300;
     const th      = tooltip.offsetHeight || 180;
     const vw      = window.innerWidth;
     const vh      = window.innerHeight;
 
-    let top, left;
-
-    // Prefer below; fall back to above; clamp to viewport
+    let top;
+    // Prefer below; fall back to above; clamp if neither fits
     if (rect.bottom + th + 16 < vh) {
         top = rect.bottom + 12;
     } else if (rect.top - th - 16 > 0) {
@@ -139,7 +166,7 @@ function _positionTooltip(target) {
         top = Math.max(8, vh / 2 - th / 2);
     }
 
-    left = rect.left + rect.width / 2 - tw / 2;
+    let left = rect.left + rect.width / 2 - tw / 2;
     left = Math.max(8, Math.min(left, vw - tw - 8));
 
     tooltip.style.top  = top  + 'px';
@@ -158,7 +185,7 @@ function tourPrev() {
 
 function endTour() {
     document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
-    document.getElementById('tour-overlay').classList.add('hidden');
+    _hideShades();
     document.getElementById('tour-tooltip').classList.add('hidden');
 }
 
