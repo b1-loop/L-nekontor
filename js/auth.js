@@ -51,6 +51,9 @@ function doLogin() {
         return;
     }
 
+    currentUser.lastLogin = Date.now();
+    saveData();
+
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app-content').classList.remove('hidden');
     document.getElementById('logged-in-user').innerText = `👤 ${currentUser.name}`;

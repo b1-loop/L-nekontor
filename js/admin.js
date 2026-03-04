@@ -63,7 +63,7 @@ function loadAdminData() {
         chartOBPay.push(obPay);
 
         tbody.innerHTML += `<tr class="employee-row">
-            <td class="emp-name"><strong class="clickable-name" onclick="openEditModal('${emp.id}')">${emp.name}</strong><br><small style="color:var(--text-muted)">${emp.wage} kr/h</small></td>
+            <td class="emp-name"><strong class="clickable-name" onclick="openEditModal('${emp.id}')">${emp.name}</strong><br><small style="color:var(--text-muted)">${emp.wage} kr/h</small>${emp.lastLogin ? `<br><small style="color:var(--text-muted)">🕐 ${new Date(emp.lastLogin).toLocaleDateString(getLangLocale(), { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' })}</small>` : ''}</td>
             <td><span class="badge ${emp.status.toLowerCase()}">${emp.status}</span></td>
             <td>${totHrs.toFixed(2)}h</td>
             <td style="color: #8b5cf6; font-weight:bold;">${obHrs.toFixed(2)}h</td>
@@ -306,6 +306,8 @@ function renderSharedCalendar() {
         });
     });
 
+    const holidays = getSwedishHolidays(_planYear);
+
     const dayNames = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
     let html = '<div class="cal-grid">';
     dayNames.forEach(d => { html += `<div class="cal-header">${d}</div>`; });
@@ -317,7 +319,11 @@ function renderSharedCalendar() {
         const dateStr = `${monthStr}-${String(d).padStart(2, '0')}`;
         const data    = dayMap[dateStr];
         const isToday = dateStr === todayStr;
+        const holiday = holidays[dateStr];
         let content   = '';
+        if (holiday) {
+            content += `<span style="display:block; font-size:0.55rem; color:#ef4444; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600;">🔴 ${holiday}</span>`;
+        }
         if (data?.shifts?.length) {
             content += data.shifts.map(n =>
                 `<span style="display:block; font-size:0.6rem; color:#3b82f6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${n}</span>`
@@ -333,8 +339,8 @@ function renderSharedCalendar() {
                 `<span style="display:block; font-size:0.6rem; color:#f59e0b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">✋ ${n}</span>`
             ).join('');
         }
-        html += `<div class="cal-day ${isToday ? 'is-today' : ''}" style="min-height:60px; align-items:flex-start; padding:0.3rem;">
-            <span class="cal-date">${d}</span>${content}
+        html += `<div class="cal-day ${isToday ? 'is-today' : ''} ${holiday ? 'is-holiday' : ''}" style="min-height:60px; align-items:flex-start; padding:0.3rem;">
+            <span class="cal-date" ${holiday ? 'style="color:#ef4444;"' : ''}>${d}</span>${content}
         </div>`;
     }
     html += '</div>';
@@ -347,7 +353,7 @@ function renderSharedCalendar() {
             <span style="font-size:0.8rem; color:var(--text-muted); margin-left:0.5rem;">
                 <span style="color:#3b82f6;">●</span> Schemalagd
                 <span style="color:#10b981; margin-left:0.5rem;">●</span> Semester
-                <span style="color:#ef4444; margin-left:0.5rem;">●</span> Sjuk
+                <span style="color:#ef4444; margin-left:0.5rem;">●</span> Sjuk / Röd dag
                 <span style="color:#f59e0b; margin-left:0.5rem;">✋</span> Tillgänglig
             </span>
         </div>
@@ -409,6 +415,24 @@ function exportPersonnelCSV() {
     link.setAttribute('download', `personalregister_${new Date().toLocaleDateString('sv-SE')}.csv`);
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
     showToast('Personalregister exporterat!', 'success');
+}
+
+// ================================================================
+// EXPORTERA SCHEMA CSV (Feature 7)
+// ================================================================
+function exportScheduleCSV() {
+    let csv = "data:text/csv;charset=utf-8,Namn;Datum;Tid\n";
+    employees.filter(e => e.role !== 'admin').forEach(emp => {
+        [...emp.schedule].sort((a, b) => a.day.localeCompare(b.day)).forEach(s => {
+            csv += `"${emp.name}";"${s.day}";"${s.time}"\n`;
+        });
+    });
+    const link = document.createElement('a');
+    link.setAttribute('href', encodeURI(csv));
+    link.setAttribute('download', `schema_${new Date().toLocaleDateString('sv-SE')}.csv`);
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    showToast('Schema exporterat!', 'success');
+    addLog('Exporterade schema som CSV');
 }
 
 // ================================================================

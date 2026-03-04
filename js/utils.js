@@ -1,5 +1,54 @@
 // ================================================================
-// 2. TOASTS & KLOCKA
+// 2. RÖDA DAGAR (svenska helgdagar)
+// ================================================================
+function getEasterDate(year) {
+    const a = year % 19, b = Math.floor(year / 100), c = year % 100;
+    const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+    const g = Math.floor((b - f + 1) / 3);
+    const h = (19 * a + b - d - g + 15) % 30;
+    const i = Math.floor(c / 4), k = c % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((a + 11 * h + 22 * l) / 451);
+    const month = Math.floor((h + l - 7 * m + 114) / 31);
+    const day   = ((h + l - 7 * m + 114) % 31) + 1;
+    return new Date(year, month - 1, day);
+}
+
+function getSwedishHolidays(year) {
+    const pad  = n => String(n).padStart(2, '0');
+    const fmt  = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const add  = (base, days) => { const d = new Date(base); d.setDate(d.getDate() + days); return d; };
+    const easter = getEasterDate(year);
+
+    // Midsommarafton = fredag 19–25 juni
+    let mid = new Date(year, 5, 19);
+    while (mid.getDay() !== 5) mid.setDate(mid.getDate() + 1);
+
+    // Alla helgons dag = lördag 31 okt – 6 nov
+    let allh = new Date(year, 9, 31);
+    while (allh.getDay() !== 6) allh.setDate(allh.getDate() + 1);
+
+    return {
+        [`${year}-01-01`]: 'Nyårsdagen',
+        [`${year}-01-06`]: 'Trettondedag jul',
+        [fmt(add(easter, -2))]: 'Långfredagen',
+        [fmt(easter)]:           'Påskdagen',
+        [fmt(add(easter, 1))]:   'Annandag påsk',
+        [`${year}-05-01`]:       'Första maj',
+        [fmt(add(easter, 39))]:  'Kristi himmelsfärd',
+        [`${year}-06-06`]:       'Nationaldagen',
+        [fmt(mid)]:              'Midsommarafton',
+        [fmt(add(mid, 1))]:      'Midsommardagen',
+        [fmt(allh)]:             'Alla helgons dag',
+        [`${year}-12-24`]:       'Julafton',
+        [`${year}-12-25`]:       'Juldagen',
+        [`${year}-12-26`]:       'Annandag jul',
+        [`${year}-12-31`]:       'Nyårsafton',
+    };
+}
+
+// ================================================================
+// 3. TOASTS & KLOCKA
 // ================================================================
 function showToast(msg, type = '') {
     const container = document.getElementById('toast-container');
@@ -18,7 +67,7 @@ setInterval(updateClock, 1000);
 updateClock();
 
 // ================================================================
-// 3. AKTIVITETSLOGG (cap 100, search, visa fler)
+// 4. AKTIVITETSLOGG (cap 100, search, visa fler)
 // ================================================================
 function addLog(action, userName = null) {
     const name = userName || (currentUser ? currentUser.name : "System");
@@ -51,7 +100,7 @@ function showMoreLogs() {
 }
 
 // ================================================================
-// 4. TEMA & NÄTVERK
+// 5. TEMA & NÄTVERK
 // ================================================================
 function toggleDarkMode() {
     document.body.classList.toggle('dark-mode');

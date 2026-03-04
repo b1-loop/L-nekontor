@@ -195,8 +195,13 @@ function renderScheduleList() {
         const completeBtn   = isPastOrToday
             ? `<button class="btn-sm" style="background:#10b981; margin-right:0.4rem;" onclick="completeScheduledShift(${origIdx})">✅ Färdig</button>`
             : '';
+        const holidays   = getSwedishHolidays(new Date(shift.day).getFullYear());
+        const holiday    = holidays[shift.day];
+        const holidayBadge = holiday
+            ? `<span style="font-size:0.72rem; color:#ef4444; margin-left:0.5rem;">🔴 ${holiday}</span>`
+            : '';
         ul.innerHTML += `<li>
-            <div><strong>${shift.day}</strong> <span style="margin-left:10px; color:var(--text-muted);">${shift.time}</span></div>
+            <div><strong>${shift.day}</strong> <span style="margin-left:10px; color:var(--text-muted);">${shift.time}</span>${holidayBadge}</div>
             <div style="display:flex;gap:0.25rem;align-items:center;">
                 ${completeBtn}
                 <button class="btn-sm btn-edit" style="padding:0.4rem 0.6rem;" onclick="duplicateShiftWorker(${origIdx})" title="Duplicera pass">📋</button>
@@ -223,6 +228,8 @@ function renderScheduleCalendar() {
         if (shift.day.startsWith(monthStr)) monthShifts[shift.day] = shift.time;
     });
 
+    const holidays = getSwedishHolidays(year);
+
     const dayNames = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
     let html = '<div class="cal-grid">';
     dayNames.forEach(d => { html += `<div class="cal-header">${d}</div>`; });
@@ -232,11 +239,13 @@ function renderScheduleCalendar() {
     for (let i = 0; i < startDow; i++) html += '<div class="cal-day empty"></div>';
 
     for (let d = 1; d <= lastDay.getDate(); d++) {
-        const dateStr = `${monthStr}-${String(d).padStart(2, '0')}`;
-        const shift   = monthShifts[dateStr];
-        const isToday = dateStr === todayStr;
-        html += `<div class="cal-day ${shift ? 'has-shift' : ''} ${isToday ? 'is-today' : ''}">
-            <span class="cal-date">${d}</span>
+        const dateStr  = `${monthStr}-${String(d).padStart(2, '0')}`;
+        const shift    = monthShifts[dateStr];
+        const isToday  = dateStr === todayStr;
+        const holiday  = holidays[dateStr];
+        html += `<div class="cal-day ${shift ? 'has-shift' : ''} ${isToday ? 'is-today' : ''} ${holiday ? 'is-holiday' : ''}">
+            <span class="cal-date" ${holiday ? 'style="color:#ef4444;"' : ''}>${d}</span>
+            ${holiday ? `<span class="cal-shift" style="color:#ef4444; font-size:0.6rem;">${holiday}</span>` : ''}
             ${shift ? `<span class="cal-shift">${shift}</span>` : ''}
         </div>`;
     }

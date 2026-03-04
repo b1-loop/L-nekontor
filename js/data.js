@@ -44,6 +44,7 @@ employees.forEach(emp => {
     if (emp.availability      === undefined) emp.availability      = [];
     if (emp.swapRequests      === undefined) emp.swapRequests      = [];
     if (emp.notifications     === undefined) emp.notifications     = [];
+    if (emp.lastLogin         === undefined) emp.lastLogin         = null;
     emp.workedHistory.forEach(s => {
         if (s.otHours      === undefined) s.otHours      = 0;
         if (s.breakMinutes === undefined) s.breakMinutes = 0;
