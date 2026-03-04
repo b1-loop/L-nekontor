@@ -55,6 +55,7 @@ function doLogin() {
     document.getElementById('app-content').classList.remove('hidden');
     document.getElementById('logged-in-user').innerText = `👤 ${currentUser.name}`;
     updateCompanyName();
+    applyTranslations();
 
     document.getElementById('tour-help-btn').classList.remove('hidden');
 
@@ -98,5 +99,6 @@ document.getElementById('login-pin').addEventListener('keydown', e => {
     if (e.key === 'Enter') doLogin();
 });
 
-// Init company name on page load
+// Init company name and language on page load
 updateCompanyName();
+applyTranslations();

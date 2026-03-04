@@ -21,7 +21,7 @@
     <div id="login-screen">
         <div class="login-box">
             <h1>⏱️ TimeTrack Pro</h1>
-            <p style="margin-bottom: 2rem; color: #94a3b8;">Säker inloggning med personlig PIN.</p>
+            <p style="margin-bottom: 2rem; color: #94a3b8;" data-i18n="login_subtitle">Säker inloggning med personlig PIN.</p>
             <p style="font-size: 0.8rem; color: #64748b; margin-bottom: 1rem;">Admin: 9999 | Alex: 1234 | Sara: 5678</p>
             <input type="password" id="login-pin" class="pin-input" placeholder="****" maxlength="4" autocomplete="off" oninput="clearPinError()">
             <p id="pin-error"></p>
@@ -39,7 +39,7 @@
                 <button onclick="pinInput('0')">0</button>
                 <button onclick="doLogin()" style="background:rgba(59,130,246,0.4);">↵</button>
             </div>
-            <button class="login-btn" onclick="doLogin()">Logga in</button>
+            <button class="login-btn" onclick="doLogin()" data-i18n="login_btn">Logga in</button>
         </div>
     </div>
 
@@ -53,10 +53,11 @@
 
             <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
                 <div id="network-status" class="network-badge online">🟢 Online</div>
-                <button id="tour-help-btn" class="hidden" onclick="startTour()" style="background: rgba(124,58,237,0.15); color: #a78bfa;">❓ Guide</button>
-                <button id="settings-btn" class="hidden" onclick="openSettingsModal()">⚙️ Inställningar</button>
-                <button onclick="toggleDarkMode()">🌙 Tema</button>
-                <button onclick="logout()" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5;">Logga ut</button>
+                <button id="lang-btn" onclick="toggleLanguage()" style="background:rgba(255,255,255,0.08);">🇬🇧 EN</button>
+                <button id="tour-help-btn" class="hidden" onclick="startTour()" style="background: rgba(124,58,237,0.15); color: #a78bfa;" data-i18n="nav_guide">❓ Guide</button>
+                <button id="settings-btn" class="hidden" onclick="openSettingsModal()" data-i18n="nav_settings">⚙️ Inställningar</button>
+                <button onclick="toggleDarkMode()" data-i18n="nav_theme">🌙 Tema</button>
+                <button onclick="logout()" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5;" data-i18n="nav_logout">Logga ut</button>
             </div>
         </nav>
 
@@ -66,10 +67,10 @@
             <!-- ===== WORKER VIEW ===== -->
             <div id="worker-view" class="hidden">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                    <h2 id="welcome-message" style="margin: 0;">Din stämpelklocka</h2>
+                    <h2 id="welcome-message" style="margin: 0;" data-i18n="worker_title">Din stämpelklocka</h2>
                     <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                        <button class="btn btn-secondary" style="width: auto; margin:0;" onclick="openMyPayslipsModal()">📋 Mina lönespecar</button>
-                        <button class="btn btn-secondary" style="width: auto; margin:0;" onclick="openPayslipModal()">🧾 Visa Lönespecifikation</button>
+                        <button class="btn btn-secondary" style="width: auto; margin:0;" onclick="openMyPayslipsModal()" data-i18n="worker_my_payslips">📋 Mina lönespecar</button>
+                        <button class="btn btn-secondary" style="width: auto; margin:0;" onclick="openPayslipModal()" data-i18n="worker_view_payslip">🧾 Visa Lönespecifikation</button>
                     </div>
                 </div>
 
@@ -85,21 +86,21 @@
                 </div>
 
                 <div class="card" style="margin-top: 1rem;">
-                    <h3>⏰ Aktuell Status</h3>
-                    <p>Status: <span id="worker-status-badge" class="badge utloggad">Utloggad</span></p>
+                    <h3 data-i18n="status_current">⏰ Aktuell Status</h3>
+                    <p><span data-i18n="status_label">Status:</span> <span id="worker-status-badge" class="badge utloggad">Utloggad</span></p>
 
                     <div id="active-session-timer" class="live-timer" style="display: none;">00:00:00</div>
 
                     <div style="margin-top: 1.5rem; display:flex; flex-wrap: wrap; justify-content: center;" id="worker-action-buttons"></div>
 
                     <div class="stats-grid" id="worker-stats-grid">
-                        <div class="stat-box"><span>Vanlig Tid</span><strong id="worker-hours">0h</strong></div>
-                        <div class="stat-box"><span>OB-Timmar</span><strong id="worker-ob-hours" style="color: #8b5cf6;">0h</strong></div>
-                        <div class="stat-box"><span>Övertid</span><strong id="worker-ot-hours" style="color: #f97316;">0h</strong></div>
-                        <div class="stat-box"><span>Bruttolön</span><strong id="worker-earned">0 kr</strong></div>
-                        <div class="stat-box"><span>Semesterdagar kvar</span><strong id="worker-vacation-days" style="color: #10b981;">25</strong></div>
-                        <div class="stat-box"><span>Sjukdagar</span><strong id="worker-sick-days" style="color: #ef4444;">0</strong></div>
-                        <div class="stat-box"><span>Dagar till lön</span><strong id="worker-payday-countdown" style="color:#f59e0b;">—</strong></div>
+                        <div class="stat-box"><span data-i18n="stat_regular">Vanlig Tid</span><strong id="worker-hours">0h</strong></div>
+                        <div class="stat-box"><span data-i18n="stat_ob">OB-Timmar</span><strong id="worker-ob-hours" style="color: #8b5cf6;">0h</strong></div>
+                        <div class="stat-box"><span data-i18n="stat_ot">Övertid</span><strong id="worker-ot-hours" style="color: #f97316;">0h</strong></div>
+                        <div class="stat-box"><span data-i18n="stat_gross">Bruttolön</span><strong id="worker-earned">0 kr</strong></div>
+                        <div class="stat-box"><span data-i18n="stat_vacation">Semesterdagar kvar</span><strong id="worker-vacation-days" style="color: #10b981;">25</strong></div>
+                        <div class="stat-box"><span data-i18n="stat_sick">Sjukdagar</span><strong id="worker-sick-days" style="color: #ef4444;">0</strong></div>
+                        <div class="stat-box"><span data-i18n="stat_payday">Dagar till lön</span><strong id="worker-payday-countdown" style="color:#f59e0b;">—</strong></div>
                     </div>
 
                     <!-- Feature 1: Inkomstgraf -->
@@ -118,144 +119,177 @@
                                style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--input-border); background:var(--input-bg); color:var(--text-color); box-sizing:border-box;"
                                placeholder="Valfri kommentar (t.ex. orsak, läkarmöte...)">
                         <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
-                            <button class="btn btn-primary" style="flex:1;" onclick="confirmAbsence()">Bekräfta</button>
-                            <button class="btn btn-secondary" style="flex:1;" onclick="cancelAbsence()">Avbryt</button>
+                            <button class="btn btn-primary" style="flex:1;" onclick="confirmAbsence()" data-i18n="btn_confirm">Bekräfta</button>
+                            <button class="btn btn-secondary" style="flex:1;" onclick="cancelAbsence()" data-i18n="btn_cancel_abs">Avbryt</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="card">
                     <h3>
-                        📅 Mitt Schema
-                        <button class="btn-sm btn-edit" id="schedule-view-btn" onclick="toggleScheduleView()" style="font-size:0.72rem; padding:0.3rem 0.7rem;">📅 Kalender</button>
+                        <span data-i18n="card_schedule">📅 Mitt Schema</span>
+                        <button class="btn-sm btn-edit" id="schedule-view-btn" onclick="toggleScheduleView()" style="font-size:0.72rem; padding:0.3rem 0.7rem;" data-i18n="btn_calendar">📅 Kalender</button>
                     </h3>
                     <ul id="schedule-list" class="schedule-list"></ul>
 
                     <h4 style="margin-top:2rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-                        Lägg till nytt pass
-                        <button class="btn-sm btn-edit" onclick="copyLastWeekSchedule()" style="font-size:0.72rem; padding:0.3rem 0.7rem;">📋 Kopiera förra veckan</button>
+                        <span data-i18n="card_schedule_add">Lägg till nytt pass</span>
+                        <button class="btn-sm btn-edit" onclick="copyLastWeekSchedule()" style="font-size:0.72rem; padding:0.3rem 0.7rem;" data-i18n="btn_copy_schedule">📋 Kopiera förra veckan</button>
                     </h4>
                     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                         <div class="form-group" style="margin-bottom:0; flex: 1.5;"><input type="date" id="new-shift-day" required></div>
                         <div class="form-group" style="margin-bottom:0; flex: 1;"><input type="time" id="new-shift-start" required></div>
                         <span style="font-weight: bold; color: var(--text-muted);">-</span>
                         <div class="form-group" style="margin-bottom:0; flex: 1;"><input type="time" id="new-shift-end" required></div>
-                        <button class="btn btn-secondary" style="width:auto; margin-top:0;" onclick="addShift()">Lägg till</button>
+                        <button class="btn btn-secondary" style="width:auto; margin-top:0;" onclick="addShift()" data-i18n="btn_add">Lägg till</button>
                     </div>
 
                     <!-- Feature 9: post-clockout note -->
                     <div id="post-clockout-note" class="hidden"
                     style="margin-top:1.5rem; background:var(--stat-bg); border-radius:8px; border:1px solid var(--card-border); padding:1rem;">
-                        <label style="font-size:0.85rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.5rem;">💬 Kommentar till passet (valfritt)</label>
+                        <label style="font-size:0.85rem; font-weight:600; color:var(--text-muted); display:block; margin-bottom:0.5rem;" data-i18n="note_label">💬 Kommentar till passet (valfritt)</label>
                         <textarea id="session-note-input" rows="2" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--input-border); background:var(--input-bg); color:var(--text-color); box-sizing:border-box; resize:vertical;" placeholder="T.ex. extra kvällsarbete, vikariat..."></textarea>
                         <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
-                            <button class="btn btn-primary" style="flex:1;" onclick="saveSessionNote()">💾 Spara</button>
-                            <button class="btn btn-secondary" style="flex:1;" onclick="document.getElementById('post-clockout-note').classList.add('hidden')">Hoppa över</button>
+                            <button class="btn btn-primary" style="flex:1;" onclick="saveSessionNote()" data-i18n="btn_save_note">💾 Spara</button>
+                            <button class="btn btn-secondary" style="flex:1;" onclick="document.getElementById('post-clockout-note').classList.add('hidden')" data-i18n="btn_skip">Hoppa över</button>
                         </div>
                     </div>
 
                 </div>
 
                 <div class="card">
-                    <h3>👤 Min Profil</h3>
-                    <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0; margin-bottom:1rem;">Din personliga information — visas för admin.</p>
+                    <h3 data-i18n="card_profile">👤 Min Profil</h3>
+                    <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0; margin-bottom:1rem;" data-i18n="profile_desc">Din personliga information — visas för admin.</p>
                     <div style="display:flex; gap:1rem; flex-wrap:wrap;">
-                        <div class="form-group" style="flex:1; min-width:150px;"><label>Personnummer</label><input type="text" id="profile-personnummer" placeholder="ÅÅMMDD-XXXX" maxlength="13"></div>
-                        <div class="form-group" style="flex:1; min-width:140px;"><label>Telefon</label><input type="tel" id="profile-phone" placeholder="070-XXX XX XX"></div>
-                        <div class="form-group" style="flex:1; min-width:180px;"><label>E-post</label><input type="email" id="profile-email" placeholder="namn@exempel.se"></div>
+                        <div class="form-group" style="flex:1; min-width:150px;"><label data-i18n="label_personnummer">Personnummer</label><input type="text" id="profile-personnummer" placeholder="ÅÅMMDD-XXXX" maxlength="13"></div>
+                        <div class="form-group" style="flex:1; min-width:140px;"><label data-i18n="label_phone">Telefon</label><input type="tel" id="profile-phone" placeholder="070-XXX XX XX"></div>
+                        <div class="form-group" style="flex:1; min-width:180px;"><label data-i18n="label_email">E-post</label><input type="email" id="profile-email" placeholder="namn@exempel.se"></div>
                     </div>
                     <div style="display:flex; gap:1rem; flex-wrap:wrap;">
-                        <div class="form-group" style="flex:2; min-width:180px;"><label>Gatuadress</label><input type="text" id="profile-address" placeholder="Storgatan 1"></div>
-                        <div class="form-group" style="flex:1; min-width:80px;"><label>Postnummer</label><input type="text" id="profile-postal" placeholder="12345" maxlength="6"></div>
-                        <div class="form-group" style="flex:1; min-width:120px;"><label>Stad</label><input type="text" id="profile-city" placeholder="Stockholm"></div>
+                        <div class="form-group" style="flex:2; min-width:180px;"><label data-i18n="label_address">Gatuadress</label><input type="text" id="profile-address" placeholder="Storgatan 1"></div>
+                        <div class="form-group" style="flex:1; min-width:80px;"><label data-i18n="label_postal">Postnummer</label><input type="text" id="profile-postal" placeholder="12345" maxlength="6"></div>
+                        <div class="form-group" style="flex:1; min-width:120px;"><label data-i18n="label_city">Stad</label><input type="text" id="profile-city" placeholder="Stockholm"></div>
                     </div>
-                    <button class="btn btn-primary" style="width:auto;" onclick="saveProfile()">💾 Spara profil</button>
+                    <button class="btn btn-primary" style="width:auto;" onclick="saveProfile()" data-i18n="btn_save_profile">💾 Spara profil</button>
 
                     <hr style="margin:1.25rem 0; border:none; border-top:1px solid var(--card-border);">
-                    <h4 style="margin:0 0 0.75rem;">🔑 Byt PIN-kod</h4>
+                    <h4 style="margin:0 0 0.75rem;" data-i18n="pin_change_title">🔑 Byt PIN-kod</h4>
                     <div style="display:flex; gap:1rem; flex-wrap:wrap;">
-                        <div class="form-group" style="flex:1; min-width:100px;"><label>Nuvarande PIN</label><input type="password" id="old-pin-input" maxlength="4" placeholder="****"></div>
-                        <div class="form-group" style="flex:1; min-width:100px;"><label>Ny PIN</label><input type="password" id="new-pin-input" maxlength="4" placeholder="****"></div>
-                        <div class="form-group" style="flex:1; min-width:100px;"><label>Bekräfta ny PIN</label><input type="password" id="confirm-pin-input" maxlength="4" placeholder="****"></div>
+                        <div class="form-group" style="flex:1; min-width:100px;"><label data-i18n="label_current_pin">Nuvarande PIN</label><input type="password" id="old-pin-input" maxlength="4" placeholder="****"></div>
+                        <div class="form-group" style="flex:1; min-width:100px;"><label data-i18n="label_new_pin">Ny PIN</label><input type="password" id="new-pin-input" maxlength="4" placeholder="****"></div>
+                        <div class="form-group" style="flex:1; min-width:100px;"><label data-i18n="label_confirm_pin">Bekräfta ny PIN</label><input type="password" id="confirm-pin-input" maxlength="4" placeholder="****"></div>
                     </div>
-                    <button class="btn btn-primary" style="width:auto;" onclick="changePIN()">🔑 Byt PIN</button>
+                    <button class="btn btn-primary" style="width:auto;" onclick="changePIN()" data-i18n="btn_change_pin">🔑 Byt PIN</button>
                 </div>
 
                 <!-- Anställningsinformation & certifikat -->
                 <div class="card" id="worker-info-card">
-                    <h3>📋 Anställningsinformation</h3>
+                    <h3 data-i18n="card_employment">📋 Anställningsinformation</h3>
                     <p id="worker-startdate-info" style="color:var(--text-muted); font-size:0.85rem; margin:0 0 1rem;"></p>
-                    <h4 style="margin:0 0 0.6rem;">🎓 Mina Certifikat</h4>
+                    <h4 style="margin:0 0 0.6rem;" data-i18n="card_certs">🎓 Mina Certifikat</h4>
                     <div id="worker-cert-list"></div>
                 </div>
 
                 <!-- Semesteransökan -->
                 <div class="card" id="vacation-request-card">
-                    <h3>📝 Semesteransökan</h3>
+                    <h3 data-i18n="card_vacation_req">📝 Semesteransökan</h3>
                     <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0; margin-bottom:1rem;">Skicka en ansökan till admin. Du har <strong id="req-days-left" style="color:#10b981;"></strong> semesterdagar kvar.</p>
                     <div style="display:flex; gap:1rem; flex-wrap:wrap;">
-                        <div class="form-group" style="flex:1; min-width:130px;"><label>Från datum</label><input type="date" id="req-start-date"></div>
-                        <div class="form-group" style="flex:1; min-width:130px;"><label>Till datum</label><input type="date" id="req-end-date"></div>
+                        <div class="form-group" style="flex:1; min-width:130px;"><label data-i18n="label_from_date">Från datum</label><input type="date" id="req-start-date"></div>
+                        <div class="form-group" style="flex:1; min-width:130px;"><label data-i18n="label_to_date">Till datum</label><input type="date" id="req-end-date"></div>
                     </div>
-                    <div class="form-group"><label>Anledning (valfritt)</label><input type="text" id="req-reason" placeholder="T.ex. familjesemester, bröllop..."></div>
-                    <button class="btn btn-primary" style="width:auto;" onclick="submitVacationRequest()">📤 Skicka ansökan</button>
+                    <div class="form-group"><label data-i18n="label_reason">Anledning (valfritt)</label><input type="text" id="req-reason" placeholder="T.ex. familjesemester, bröllop..."></div>
+                    <button class="btn btn-primary" style="width:auto;" onclick="submitVacationRequest()" data-i18n="btn_send_vacation">📤 Skicka ansökan</button>
                     <div id="my-vacation-requests" style="margin-top:1.25rem;"></div>
                 </div>
 
                 <!-- Tillgänglighetsmarkering -->
                 <div class="card" id="availability-card">
-                    <h3>✋ Min Tillgänglighet</h3>
-                    <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0; margin-bottom:1rem;">Markera dagar du kan jobba men inte är schemalagd — visas för admin i planeringskalendern.</p>
+                    <h3 data-i18n="card_availability">✋ Min Tillgänglighet</h3>
+                    <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0; margin-bottom:1rem;" data-i18n="availability_desc">Markera dagar du kan jobba men inte är schemalagd — visas för admin i planeringskalendern.</p>
                     <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
                         <input type="date" id="avail-date" style="padding:0.6rem; border-radius:8px; border:1px solid var(--input-border); background:var(--input-bg); color:var(--text-color); flex:1; min-width:140px;">
-                        <button class="btn btn-primary" style="width:auto;" onclick="addAvailability()">+ Lägg till</button>
+                        <button class="btn btn-primary" style="width:auto;" onclick="addAvailability()" data-i18n="btn_add_avail">+ Lägg till</button>
                     </div>
                     <div id="availability-list" style="margin-top:0.75rem;"></div>
                 </div>
 
                 <!-- Skiftbyte -->
                 <div class="card" id="swap-card">
-                    <h3>🔄 Byt Skift</h3>
-                    <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0; margin-bottom:1rem;">Begär att ett av dina schemalagda pass ska överföras till en kollega. Admin godkänner bytet.</p>
+                    <h3 data-i18n="card_swap">🔄 Byt Skift</h3>
+                    <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0; margin-bottom:1rem;" data-i18n="swap_desc">Begär att ett av dina schemalagda pass ska överföras till en kollega. Admin godkänner bytet.</p>
                     <div class="form-group">
-                        <label>Mitt pass (välj)</label>
+                        <label data-i18n="label_my_shift">Mitt pass (välj)</label>
                         <select id="swap-my-shift" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--input-border); background:var(--input-bg); color:var(--text-color);"></select>
                     </div>
                     <div class="form-group">
-                        <label>Ge passet till</label>
+                        <label data-i18n="label_give_to">Ge passet till</label>
                         <select id="swap-target-emp" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--input-border); background:var(--input-bg); color:var(--text-color);"></select>
                     </div>
                     <div class="form-group">
-                        <label>Notering (valfritt)</label>
+                        <label data-i18n="label_swap_note">Notering (valfritt)</label>
                         <input type="text" id="swap-note" placeholder="T.ex. sjukt barn, läkarbesök...">
                     </div>
-                    <button class="btn btn-primary" style="width:auto;" onclick="submitSwapRequest()">📤 Skicka förfrågan</button>
+                    <button class="btn btn-primary" style="width:auto;" onclick="submitSwapRequest()" data-i18n="btn_send_swap">📤 Skicka förfrågan</button>
                     <div id="my-swap-requests"></div>
                 </div>
 
                 <!-- Meddelande till Admin -->
                 <div class="card" id="message-card">
-                    <h3>💬 Meddelande till Admin</h3>
-                    <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0; margin-bottom:1rem;">Skicka ett meddelande direkt till admin — t.ex. om du har frågor om lön, schema eller annat.</p>
+                    <h3 data-i18n="card_message">💬 Meddelande till Admin</h3>
+                    <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0; margin-bottom:1rem;" data-i18n="message_desc">Skicka ett meddelande direkt till admin — t.ex. om du har frågor om lön, schema eller annat.</p>
                     <textarea id="message-input" rows="3" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--input-border); background:var(--input-bg); color:var(--text-color); box-sizing:border-box; resize:vertical; font-family:inherit;" placeholder="Skriv ditt meddelande här... (max 500 tecken)"></textarea>
-                    <button class="btn btn-primary" style="width:auto; margin-top:0.5rem;" onclick="sendMessage()">📤 Skicka</button>
+                    <button class="btn btn-primary" style="width:auto; margin-top:0.5rem;" onclick="sendMessage()" data-i18n="btn_send_msg">📤 Skicka</button>
+                </div>
+
+                <!-- Veckorapport -->
+                <div class="card" id="weekly-report-card">
+                    <h3 style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                        <span data-i18n="weekly_title">📆 Veckorapport</span>
+                        <div style="display:flex; gap:0.5rem; align-items:center;">
+                            <button class="btn btn-secondary" id="weekly-report-prev" style="padding:0.3rem 0.7rem; width:auto;" onclick="weekReportPrev()">◀</button>
+                            <span id="weekly-report-label" style="font-size:0.85rem; color:var(--text-muted); white-space:nowrap;"></span>
+                            <button class="btn btn-secondary" id="weekly-report-next" style="padding:0.3rem 0.7rem; width:auto;" onclick="weekReportNext()">▶</button>
+                        </div>
+                    </h3>
+                    <div style="overflow-x:auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th data-i18n="weekly_day">Dag</th>
+                                    <th data-i18n="weekly_hours">Timmar</th>
+                                    <th data-i18n="weekly_ob">OB</th>
+                                    <th data-i18n="weekly_pay">Lön</th>
+                                </tr>
+                            </thead>
+                            <tbody id="weekly-report-body"></tbody>
+                            <tfoot>
+                                <tr style="font-weight:bold; border-top:2px solid var(--card-border);">
+                                    <td data-i18n="weekly_total">Totalt</td>
+                                    <td id="weekly-total-hours">—</td>
+                                    <td id="weekly-total-ob">—</td>
+                                    <td id="weekly-total-gross">—</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
             </div>
 
             <!-- ===== ADMIN VIEW ===== -->
             <div id="admin-view" class="hidden">
-                <h2>Admin Dashboard</h2>
+                <h2 data-i18n="admin_title">Admin Dashboard</h2>
 
                 <!-- Feature 8: Dashboard stats -->
                 <div class="stats-grid" id="admin-stats-grid" style="margin-bottom:1.5rem;">
-                    <div class="stat-box"><span>Lönekostnad (period)</span><strong id="admin-total-cost">0 kr</strong></div>
-                    <div class="stat-box"><span>Inloggade just nu</span><strong id="admin-active-now" style="color:#10b981;">0</strong></div>
-                    <div class="stat-box"><span>Snittlön</span><strong id="admin-avg-wage">0 kr/h</strong></div>
-                    <div class="stat-box"><span>Totala timmar (period)</span><strong id="admin-total-hours">0h</strong></div>
+                    <div class="stat-box"><span data-i18n="admin_stat_cost">Lönekostnad (period)</span><strong id="admin-total-cost">0 kr</strong></div>
+                    <div class="stat-box"><span data-i18n="admin_stat_active">Inloggade just nu</span><strong id="admin-active-now" style="color:#10b981;">0</strong></div>
+                    <div class="stat-box"><span data-i18n="admin_stat_avg">Snittlön</span><strong id="admin-avg-wage">0 kr/h</strong></div>
+                    <div class="stat-box"><span data-i18n="admin_stat_hours">Totala timmar (period)</span><strong id="admin-total-hours">0h</strong></div>
                 </div>
 
                 <div class="card">
-                    <h3>📊 Kostnadsfördelning</h3>
+                    <h3 data-i18n="admin_chart">📊 Kostnadsfördelning</h3>
                     <div style="position: relative; height:250px; width:100%;">
                         <canvas id="salaryChart"></canvas>
                     </div>
@@ -264,36 +298,36 @@
                 <div class="admin-grid">
                     <div>
                         <div class="card">
-                            <h3>➕ Ny Anställd</h3>
-                            <div class="form-group"><label for="new-name">Namn</label><input type="text" id="new-name" placeholder="T.ex. Anna Svensson"></div>
-                            <div class="form-group"><label for="new-pin">Personlig PIN (4 siffror)</label><input type="text" id="new-pin" placeholder="T.ex. 4321" maxlength="4"></div>
-                            <div class="form-group"><label for="new-wage">Timlön (kr)</label><input type="number" id="new-wage" placeholder="T.ex. 160" min="1"></div>
-                            <button class="btn btn-primary" onclick="addEmployee()">Lägg till person</button>
+                            <h3 data-i18n="card_new_emp">➕ Ny Anställd</h3>
+                            <div class="form-group"><label for="new-name" data-i18n="label_name">Namn</label><input type="text" id="new-name" placeholder="T.ex. Anna Svensson"></div>
+                            <div class="form-group"><label for="new-pin" data-i18n="label_pin_field">Personlig PIN (4 siffror)</label><input type="text" id="new-pin" placeholder="T.ex. 4321" maxlength="4"></div>
+                            <div class="form-group"><label for="new-wage" data-i18n="label_wage">Timlön (kr)</label><input type="number" id="new-wage" placeholder="T.ex. 160" min="1"></div>
+                            <button class="btn btn-primary" onclick="addEmployee()" data-i18n="btn_add_emp">Lägg till person</button>
                         </div>
 
                         <div class="card">
-                            <h3 id="pending-requests-heading">📋 Semesteransökningar</h3>
+                            <h3 id="pending-requests-heading" data-i18n="card_vacation_reqs">📋 Semesteransökningar</h3>
                             <div id="pending-requests-list"></div>
                         </div>
 
                         <div class="card">
-                            <h3 id="swap-requests-heading">🔄 Skiftbyten</h3>
+                            <h3 id="swap-requests-heading" data-i18n="card_swap_reqs">🔄 Skiftbyten</h3>
                             <div id="swap-requests-list"></div>
                         </div>
 
                         <div class="card">
                             <h3 style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
-                                <span id="admin-messages-heading">💬 Meddelanden</span>
-                                <button class="btn btn-secondary" style="font-size:0.8rem; padding:0.3rem 0.7rem;" onclick="markAllMessagesRead()">Markera alla lästa</button>
+                                <span id="admin-messages-heading" data-i18n="card_messages">💬 Meddelanden</span>
+                                <button class="btn btn-secondary" style="font-size:0.8rem; padding:0.3rem 0.7rem;" onclick="markAllMessagesRead()" data-i18n="btn_mark_read">Markera alla lästa</button>
                             </h3>
                             <div id="admin-messages-list"></div>
                         </div>
 
                         <div class="card">
-                            <h3>⏱️ Aktivitetslogg</h3>
-                            <input type="text" id="log-search" class="search-bar" placeholder="Sök i logg..." oninput="renderLogs()">
+                            <h3 data-i18n="card_log">⏱️ Aktivitetslogg</h3>
+                            <input type="text" id="log-search" class="search-bar" placeholder="Sök i logg..." oninput="renderLogs()" data-i18n-ph="log_search_ph">
                             <ul id="activity-log-list" class="log-list"></ul>
-                            <button id="log-show-more" class="btn btn-secondary" style="margin-top: 1rem; display: none;" onclick="showMoreLogs()">Visa fler</button>
+                            <button id="log-show-more" class="btn btn-secondary" style="margin-top: 1rem; display: none;" onclick="showMoreLogs()" data-i18n="btn_show_more">Visa fler</button>
                         </div>
                     </div>
 
@@ -307,23 +341,23 @@
                             </div>
                         </h3>
                         <div class="period-filter-row">
-                            <label>Löneperiod:</label>
+                            <label data-i18n="payroll_period">Löneperiod:</label>
                             <select id="period-filter" class="period-select" onchange="loadAdminData()">
-                                <option value="all">Allt</option>
-                                <option value="week">Denna vecka</option>
-                                <option value="month">Denna månad</option>
+                                <option value="all" data-i18n="period_all">Allt</option>
+                                <option value="week" data-i18n="period_week">Denna vecka</option>
+                                <option value="month" data-i18n="period_month">Denna månad</option>
                             </select>
                         </div>
-                        <input type="text" id="search-employee" class="search-bar" placeholder="Sök efter anställd..." onkeyup="filterTable()">
+                        <input type="text" id="search-employee" class="search-bar" placeholder="Sök efter anställd..." onkeyup="filterTable()" data-i18n-ph="emp_search_ph">
                         <table style="min-width: 550px;">
                             <thead>
                                 <tr>
-                                    <th onclick="sortTable('name')"  style="cursor:pointer; user-select:none;">Anställd <span id="sort-name"  style="font-size:0.7rem;"></span></th>
-                                    <th>Status</th>
-                                    <th onclick="sortTable('hours')" style="cursor:pointer; user-select:none;">Vanlig Tid <span id="sort-hours" style="font-size:0.7rem;"></span></th>
-                                    <th onclick="sortTable('ob')"    style="cursor:pointer; user-select:none;">OB <span id="sort-ob"    style="font-size:0.7rem;"></span></th>
-                                    <th onclick="sortTable('gross')" style="cursor:pointer; user-select:none;">Bruttolön <span id="sort-gross" style="font-size:0.7rem;"></span></th>
-                                    <th>Åtgärd</th>
+                                    <th onclick="sortTable('name')"  style="cursor:pointer; user-select:none;"><span data-i18n="col_employee">Anställd</span> <span id="sort-name"  style="font-size:0.7rem;"></span></th>
+                                    <th data-i18n="col_status">Status</th>
+                                    <th onclick="sortTable('hours')" style="cursor:pointer; user-select:none;"><span data-i18n="col_hours">Vanlig Tid</span> <span id="sort-hours" style="font-size:0.7rem;"></span></th>
+                                    <th onclick="sortTable('ob')"    style="cursor:pointer; user-select:none;"><span data-i18n="col_ob">OB</span> <span id="sort-ob"    style="font-size:0.7rem;"></span></th>
+                                    <th onclick="sortTable('gross')" style="cursor:pointer; user-select:none;"><span data-i18n="col_gross">Bruttolön</span> <span id="sort-gross" style="font-size:0.7rem;"></span></th>
+                                    <th data-i18n="col_action">Åtgärd</th>
                                 </tr>
                             </thead>
                             <tbody id="payroll-body"></tbody>
@@ -333,13 +367,13 @@
 
                 <!-- Feature 2: Övertidsrapport -->
                 <div class="card" id="overtime-card" style="margin-top:1.5rem;">
-                    <h3>⚠️ Övertidsrapport</h3>
+                    <h3 data-i18n="card_overtime">⚠️ Övertidsrapport</h3>
                     <div id="overtime-report-list"></div>
                 </div>
 
                 <!-- Feature 4: Semesterplanering -->
                 <div class="card" id="plan-calendar-card" style="margin-top:1.5rem;">
-                    <h3>📅 Semesterplanering & Schema</h3>
+                    <h3 data-i18n="card_calendar">📅 Semesterplanering & Schema</h3>
                     <div id="shared-calendar-container"></div>
                 </div>
 
@@ -351,7 +385,7 @@
 
                 <!-- Frånvarostatistik -->
                 <div class="card" id="absence-stats-card" style="margin-top:1.5rem;">
-                    <h3>📊 Frånvarostatistik</h3>
+                    <h3 data-i18n="card_absence_stats">📊 Frånvarostatistik</h3>
                     <div style="position:relative; height:200px; max-width:280px; margin:0 auto;">
                         <canvas id="absence-stats-chart"></canvas>
                     </div>
@@ -368,7 +402,7 @@
             <div style="text-align: center; margin-bottom: 0.75rem;">
                 <strong id="payslip-company" style="font-size: 1rem; color: var(--text-muted);"></strong>
             </div>
-            <h2 style="margin-top:0; border-bottom: 2px solid var(--card-border); padding-bottom: 1rem;">Lönespecifikation</h2>
+            <h2 style="margin-top:0; border-bottom: 2px solid var(--card-border); padding-bottom: 1rem;" data-i18n="payslip_title">Lönespecifikation</h2>
             <p style="color: var(--text-muted); font-size: 0.9rem;">Period: <span id="payslip-date"></span></p>
             <p style="font-weight: bold; font-size: 1.1rem; margin-bottom: 2rem;">Namn: <span id="payslip-name" style="color: #3b82f6;"></span></p>
 
@@ -390,8 +424,8 @@
             <div class="receipt-total" style="margin-top: 0.5rem; color: #10b981; font-size: 1.5rem;"><span>Nettolön (Att få ut)</span><span id="payslip-net-total">0 kr</span></div>
 
             <div style="display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap;">
-                <button id="payslip-print-btn" class="btn btn-primary" style="flex: 1;" onclick="window.print()">🖨️ Skriv ut / Spara PDF</button>
-                <button class="btn btn-secondary" style="flex: 1;" onclick="closePayslipModal()">Stäng Kvitto</button>
+                <button id="payslip-print-btn" class="btn btn-primary" style="flex: 1;" onclick="window.print()" data-i18n="btn_print">🖨️ Skriv ut / Spara PDF</button>
+                <button class="btn btn-secondary" style="flex: 1;" onclick="closePayslipModal()" data-i18n="btn_close_payslip">Stäng Kvitto</button>
             </div>
         </div>
     </div>
@@ -484,8 +518,8 @@
             <h3 id="confirm-title" style="margin-top: 0;">Bekräfta</h3>
             <p id="confirm-message" style="color: var(--text-muted);"></p>
             <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
-                <button class="btn" style="background: #64748b; width: auto;" onclick="confirmReject()">Avbryt</button>
-                <button class="btn" style="background: #ef4444; width: auto;" onclick="confirmResolve()">Bekräfta</button>
+                <button class="btn" style="background: #64748b; width: auto;" onclick="confirmReject()" data-i18n="confirm_cancel">Avbryt</button>
+                <button class="btn" style="background: #ef4444; width: auto;" onclick="confirmResolve()" data-i18n="confirm_ok">Bekräfta</button>
             </div>
         </div>
     </div>
@@ -494,7 +528,7 @@
     <div id="settings-modal" class="modal">
         <div class="modal-content" style="max-width: 420px;">
             <button class="modal-close" onclick="closeSettingsModal()">✖</button>
-            <h2 style="margin-top: 0;">⚙️ Inställningar</h2>
+            <h2 style="margin-top: 0;" data-i18n="settings_title">⚙️ Inställningar</h2>
             <div class="form-group">
                 <label for="company-name-input">Företagsnamn</label>
                 <input type="text" id="company-name-input" placeholder="Mitt Företag AB">
@@ -506,7 +540,7 @@
                 placeholder="T.ex. 'Löneutbetalning fredag! Glöm inte personalfikan.'"></textarea>
             <small style="color:var(--text-muted); display:block; margin-top:0.25rem;">Visas som en banner när anställda loggar in. Lämna tomt för att ta bort.</small>
 
-            <button class="btn btn-primary" style="margin-top:1rem;" onclick="saveSettings()">💾 Spara inställningar</button>
+            <button class="btn btn-primary" style="margin-top:1rem;" onclick="saveSettings()" data-i18n="btn_save_settings">💾 Spara inställningar</button>
 
             <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--card-border);">
             <h4 style="margin: 0 0 0.6rem;">⏱️ Övertidsgräns (h/dag)</h4>
@@ -623,13 +657,14 @@
         <h4 id="tour-title" style="margin: 0.25rem 0 0.5rem;"></h4>
         <p id="tour-text" style="color: var(--text-muted); line-height: 1.55; margin: 0 0 1rem; font-size: 0.88rem;"></p>
         <div style="display:flex; gap:0.5rem; align-items:center; justify-content:space-between;">
-            <button id="tour-prev-btn" class="btn btn-secondary" style="width:auto; padding:0.4rem 0.9rem; font-size:0.83rem;" onclick="tourPrev()">← Bakåt</button>
-            <button class="btn" style="width:auto; background:none; color:var(--text-muted); font-size:0.8rem; padding:0.4rem 0.6rem; text-decoration:underline;" onclick="endTour()">Hoppa över</button>
-            <button id="tour-next-btn" class="btn btn-primary" style="width:auto; padding:0.4rem 0.9rem; font-size:0.83rem;" onclick="tourNext()">Nästa →</button>
+            <button id="tour-prev-btn" class="btn btn-secondary" style="width:auto; padding:0.4rem 0.9rem; font-size:0.83rem;" onclick="tourPrev()" data-i18n="tour_prev">← Bakåt</button>
+            <button class="btn" style="width:auto; background:none; color:var(--text-muted); font-size:0.8rem; padding:0.4rem 0.6rem; text-decoration:underline;" onclick="endTour()" data-i18n="tour_skip">Hoppa över</button>
+            <button id="tour-next-btn" class="btn btn-primary" style="width:auto; padding:0.4rem 0.9rem; font-size:0.83rem;" onclick="tourNext()" data-i18n="tour_next">Nästa →</button>
         </div>
     </div>
 
     <!-- ===== SCRIPTS ===== -->
+    <script src="js/i18n.js"></script>
     <script src="js/data.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/calculations.js"></script>

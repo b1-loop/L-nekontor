@@ -125,6 +125,7 @@ function loadWorkerView() {
     // Feature 1 & 7: render schedule (list or calendar)
     renderScheduleSection();
     renderWorkerChart();
+    renderWeeklyReport();
     renderMyVacationRequests();
     renderAvailabilityList();
     renderMySwapRequests();
@@ -257,31 +258,31 @@ function updateWorkerControls() {
     if (currentUser.status === 'Utloggad') {
         timerEl.style.display = 'none';
         btnContainer.innerHTML = `
-            <button class="btn btn-in"    onclick="clockIn()">▶ Klocka In (GPS)</button>
-            <button class="btn btn-sick"  onclick="promptAbsence('Sjuk')">🤒 Sjuk</button>
-            <button class="btn btn-leave" onclick="promptAbsence('Semester')">🏖️ Ledighet</button>
+            <button class="btn btn-in"    onclick="clockIn()">${t('btn_clockin')}</button>
+            <button class="btn btn-sick"  onclick="promptAbsence('Sjuk')">${t('btn_sick')}</button>
+            <button class="btn btn-leave" onclick="promptAbsence('Semester')">${t('btn_leave')}</button>
         `;
     } else if (currentUser.status === 'Sjuk') {
         timerEl.style.display = 'none';
         btnContainer.innerHTML = `
-            <button class="btn btn-in" onclick="clockIn()">▶ Klocka In (GPS)</button>
-            <button class="btn" style="background:#10b981;" onclick="returnToWork()">✅ Friskanmäl dig</button>
+            <button class="btn btn-in" onclick="clockIn()">${t('btn_clockin')}</button>
+            <button class="btn" style="background:#10b981;" onclick="returnToWork()">✅ ${t('btn_return')}</button>
         `;
     } else if (currentUser.status === 'Semester') {
         timerEl.style.display = 'none';
         btnContainer.innerHTML = `
-            <button class="btn btn-in" onclick="clockIn()">▶ Klocka In (GPS)</button>
-            <button class="btn" style="background:#10b981;" onclick="returnToWork()">✅ Avsluta semester</button>
+            <button class="btn btn-in" onclick="clockIn()">${t('btn_clockin')}</button>
+            <button class="btn" style="background:#10b981;" onclick="returnToWork()">↩️ ${t('btn_return_vac')}</button>
         `;
     } else if (currentUser.status === 'Inloggad') {
         timerEl.style.display = 'block'; startLiveTimer();
         btnContainer.innerHTML = `
-            <button class="btn btn-break" onclick="toggleBreak(true)">☕ Börja Rast</button>
-            <button class="btn btn-out"   onclick="clockOut()">⏹ Stämpla Ut</button>
+            <button class="btn btn-break" onclick="toggleBreak(true)">${t('btn_break_start')}</button>
+            <button class="btn btn-out"   onclick="clockOut()">${t('btn_clockout')}</button>
         `;
     } else if (currentUser.status === 'Rast') {
         timerEl.style.display = 'block'; timerEl.innerText = "PAUSAD ☕";
-        btnContainer.innerHTML = `<button class="btn btn-in" onclick="toggleBreak(false)">▶ Avsluta Rast</button>`;
+        btnContainer.innerHTML = `<button class="btn btn-in" onclick="toggleBreak(false)">▶ ${t('btn_break_end')}</button>`;
     }
 }
 
@@ -747,3 +748,73 @@ function showPendingNotifications() {
     });
     saveData();
 }
+
+// ================================================================
+// VECKORAPPORT (Feature 2)
+// ================================================================
+let weekReportOffset = 0;
+
+function renderWeeklyReport() {
+    const tbody = document.getElementById('weekly-report-body');
+    if (!tbody) return;
+
+    const today     = new Date();
+    const dow       = (today.getDay() + 6) % 7; // 0=Mon … 6=Sun
+    const monday    = new Date(today);
+    monday.setDate(today.getDate() - dow + weekReportOffset * 7);
+    monday.setHours(0, 0, 0, 0);
+
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    const locale = getLangLocale();
+    const fmtShort = d => d.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+    const label = document.getElementById('weekly-report-label');
+    if (label) label.innerText = `${fmtShort(monday)} – ${fmtShort(sunday)}`;
+
+    // Disable "next" button when already on current or future week
+    const nextBtn = document.getElementById('weekly-report-next');
+    if (nextBtn) nextBtn.disabled = weekReportOffset >= 0;
+
+    let totalHours = 0, totalOB = 0, totalGross = 0;
+    let rows = '';
+
+    for (let i = 0; i < 7; i++) {
+        const d       = new Date(monday);
+        d.setDate(monday.getDate() + i);
+        const dateStr = d.toISOString().slice(0, 10);
+        const dayName = d.toLocaleDateString(locale, { weekday: 'short' });
+        const isToday = dateStr === today.toISOString().slice(0, 10);
+
+        const sessions = currentUser.workedHistory.filter(s => s.date === dateStr);
+        if (sessions.length) {
+            const hrs   = sessions.reduce((s, x) => s + x.hours, 0);
+            const ob    = sessions.reduce((s, x) => s + (x.obHours || 0), 0);
+            const ot    = sessions.reduce((s, x) => s + (x.otHours || 0), 0);
+            const gross = (hrs * currentUser.wage) + (ob * currentUser.wage * 1.5) + (ot * currentUser.wage * 0.5);
+            totalHours += hrs; totalOB += ob; totalGross += gross;
+            rows += `<tr style="background:rgba(16,185,129,0.06);">
+                <td><strong style="text-transform:capitalize;">${dayName}</strong> <span style="color:var(--text-muted);font-size:0.8rem;">${dateStr}</span></td>
+                <td>${hrs.toFixed(1)}h</td>
+                <td style="color:#8b5cf6;">${ob > 0 ? ob.toFixed(1) + 'h' : '—'}</td>
+                <td style="color:#10b981;">${Math.round(gross).toLocaleString(locale)} kr</td>
+            </tr>`;
+        } else {
+            rows += `<tr style="${isToday ? 'background:rgba(59,130,246,0.06);' : ''}">
+                <td><strong style="text-transform:capitalize;">${dayName}</strong> <span style="color:var(--text-muted);font-size:0.8rem;">${dateStr}</span></td>
+                <td style="color:var(--text-muted);">—</td>
+                <td style="color:var(--text-muted);">—</td>
+                <td style="color:var(--text-muted);">—</td>
+            </tr>`;
+        }
+    }
+
+    tbody.innerHTML = rows;
+    const el = id => document.getElementById(id);
+    if (el('weekly-total-hours')) el('weekly-total-hours').innerText = totalHours.toFixed(1) + 'h';
+    if (el('weekly-total-ob'))    el('weekly-total-ob').innerText    = totalOB.toFixed(1) + 'h';
+    if (el('weekly-total-gross')) el('weekly-total-gross').innerText = Math.round(totalGross).toLocaleString(locale) + ' kr';
+}
+
+function weekReportPrev() { weekReportOffset--; renderWeeklyReport(); }
+function weekReportNext() { if (weekReportOffset < 0) { weekReportOffset++; renderWeeklyReport(); } }

@@ -2,87 +2,34 @@
 // GUIDED TOUR
 // ================================================================
 
-const TOUR_EMPLOYEE = [
-    {
-        sel: '#worker-action-buttons',
-        title: '▶ Stämpla in och ut',
-        text: 'Klocka in när du börjar jobba och klocka ut när du slutar. Härifrån markerar du dig också som sjuk eller tar ut semester.'
-    },
-    {
-        sel: '#worker-stats-grid',
-        title: '📊 Din statistik',
-        text: 'Se dina jobbade timmar, OB-tid, övertid, bruttolön, kvarvarande semesterdagar och nedräkning till nästa lönedag.'
-    },
-    {
-        sel: '#schedule-view-btn',
-        title: '📅 Ditt schema',
-        text: 'Dina inlagda arbetspass visas här. Klicka "Kalender" för månadsöversikt eller lägg till nya pass med formuläret nedan.'
-    },
-    {
-        sel: '#worker-info-card',
-        title: '🎓 Anställningsinformation',
-        text: 'Dina certifikat, kompetenser och anställningsdatum visas här. Admin registrerar och uppdaterar dessa.'
-    },
-    {
-        sel: '#vacation-request-card',
-        title: '📝 Semesteransökan',
-        text: 'Fyll i datum och skicka en ansökan till admin. Statusen (Väntar / Godkänd / Nekad) visas direkt i listan nedan formuläret.'
-    },
-    {
-        sel: '#profile-personnummer',
-        title: '👤 Din profil',
-        text: 'Håll din kontaktinformation uppdaterad — den är synlig för admin. Längre ned i kortet kan du byta PIN-kod.'
-    }
-];
-
-const TOUR_ADMIN = [
-    {
-        sel: '#admin-stats-grid',
-        title: '📊 Dashboard',
-        text: 'Snabb översikt: total lönekostnad, antal inloggade just nu, snittlön per timme och totala timmar — allt för vald period.'
-    },
-    {
-        sel: '#period-filter',
-        title: '📅 Löneperiod',
-        text: 'Filtrera all data på Allt, Denna vecka eller Denna månad. Lönetabell, diagram och rapport uppdateras direkt.'
-    },
-    {
-        sel: '#search-employee',
-        title: '💰 Lönetabell',
-        text: 'Komplett löneöversikt för alla anställda. Sök, sortera på valfri kolumn, klicka "Historik" för att se och redigera enskilda arbetspass.'
-    },
-    {
-        sel: '#overtime-card',
-        title: '⏰ Övertidsrapport',
-        text: 'Stapeldiagram som visar vem som jobbat mest övertid. Grön = lite, orange = måttlig, röd = hög övertid.'
-    },
-    {
-        sel: '#plan-calendar-card',
-        title: '🗓️ Semesterplanering',
-        text: 'Månadskalender med alla anställdas scheman och beviljade semestrar. Navigera månader för att planera beläggning.'
-    },
-    {
-        sel: '#pending-requests-heading',
-        title: '📋 Semesteransökningar',
-        text: 'Ansökningar från anställda samlas här. Skriv en valfri kommentar och godkänn eller neka — dagarna dras automatiskt.'
-    },
-    {
-        sel: '#cert-warnings-heading',
-        title: '🎓 Certifikat-varningar',
-        text: 'Certifikat som löper ut inom 60 dagar visas som påminnelser. Grön = ok, orange = snart, röd = utgånget.'
-    },
-    {
-        sel: '#settings-btn',
-        title: '⚙️ Inställningar',
-        text: 'Konfigurera företagsnamn, lönedatum, OB-tider, övertidsgräns och ett meddelande som visas för alla anställda vid inloggning.'
-    }
-];
+function getTourEmployee() {
+    return [
+        { sel: '#worker-action-buttons', title: t('tour_emp_1_title'), text: t('tour_emp_1_text') },
+        { sel: '#worker-stats-grid',     title: t('tour_emp_2_title'), text: t('tour_emp_2_text') },
+        { sel: '#schedule-view-btn',     title: t('tour_emp_3_title'), text: t('tour_emp_3_text') },
+        { sel: '#worker-info-card',      title: t('tour_emp_4_title'), text: t('tour_emp_4_text') },
+        { sel: '#vacation-request-card', title: t('tour_emp_5_title'), text: t('tour_emp_5_text') },
+        { sel: '#profile-personnummer',  title: t('tour_emp_6_title'), text: t('tour_emp_6_text') },
+    ];
+}
+function getTourAdmin() {
+    return [
+        { sel: '#admin-stats-grid',         title: t('tour_adm_1_title'), text: t('tour_adm_1_text') },
+        { sel: '#period-filter',            title: t('tour_adm_2_title'), text: t('tour_adm_2_text') },
+        { sel: '#search-employee',          title: t('tour_adm_3_title'), text: t('tour_adm_3_text') },
+        { sel: '#overtime-card',            title: t('tour_adm_4_title'), text: t('tour_adm_4_text') },
+        { sel: '#plan-calendar-card',       title: t('tour_adm_5_title'), text: t('tour_adm_5_text') },
+        { sel: '#pending-requests-heading', title: t('tour_adm_6_title'), text: t('tour_adm_6_text') },
+        { sel: '#cert-warnings-heading',    title: t('tour_adm_7_title'), text: t('tour_adm_7_text') },
+        { sel: '#settings-btn',             title: t('tour_adm_8_title'), text: t('tour_adm_8_text') },
+    ];
+}
 
 let _tourSteps = [];
 let _tourIdx   = 0;
 
 function startTour() {
-    _tourSteps = (currentUser && currentUser.role === 'admin') ? TOUR_ADMIN : TOUR_EMPLOYEE;
+    _tourSteps = (currentUser && currentUser.role === 'admin') ? getTourAdmin() : getTourEmployee();
     _tourIdx   = 0;
     _showTourStep();
 }
@@ -114,11 +61,14 @@ function _showTourStep() {
     // Fill tooltip content
     const tooltip = document.getElementById('tour-tooltip');
     tooltip.classList.remove('hidden');
-    document.getElementById('tour-progress').textContent = `Steg ${_tourIdx + 1} av ${_tourSteps.length}`;
+    const stepWord = currentLang === 'en' ? 'Step' : 'Steg';
+    const ofWord   = currentLang === 'en' ? 'of'   : 'av';
+    document.getElementById('tour-progress').textContent = `${stepWord} ${_tourIdx + 1} ${ofWord} ${_tourSteps.length}`;
     document.getElementById('tour-title').textContent    = step.title;
     document.getElementById('tour-text').textContent     = step.text;
     document.getElementById('tour-prev-btn').style.visibility = _tourIdx === 0 ? 'hidden' : 'visible';
-    document.getElementById('tour-next-btn').textContent = _tourIdx === _tourSteps.length - 1 ? 'Avsluta ✓' : 'Nästa →';
+    const finishLabel = currentLang === 'en' ? 'Finish ✓' : 'Avsluta ✓';
+    document.getElementById('tour-next-btn').textContent = _tourIdx === _tourSteps.length - 1 ? finishLabel : t('tour_next');
 
     _positionTooltip(rect);
 }
