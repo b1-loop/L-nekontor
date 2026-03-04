@@ -54,6 +54,9 @@ Kräver ingen backend eller databas — allt sparas i webbläsarens `localStorag
 | **Mina certifikat** | Anställda ser sina certifikat och kompetenser (registrerade av admin) med utgångsdatum och färgkodad status |
 | **Tillgänglighetsmarkering** | Markera dagar du kan jobba men inte är schemalagd — visas för admin i planeringskalendern som ✋-markeringar |
 | **Skiftbyte** | Välj ett kommande pass och en kollega och skicka en bytesförfrågan — admin godkänner och passet flyttas automatiskt |
+| **Meddelande till admin** | Anställda kan skicka ett fritt meddelande till admin (max 500 tecken) direkt från sin vy |
+| **Notiser vid svar** | Toast-notis visas vid nästa inloggning när admin godkänner eller nekar en semester- eller skiftbytesansökan |
+| **Veckorapport** | Kort med dag-för-dag-vy (mån–sön): jobbade timmar, OB och lön per dag, veckototaler och ◀ ▶ för att bläddra bakåt/framåt i veckor |
 | **Interaktiv guide** | ❓ Guide-knapp i navigeringen startar en steg-för-steg genomgång av alla funktioner — startar automatiskt vid första inloggning |
 
 ---
@@ -96,6 +99,7 @@ Kräver ingen backend eller databas — allt sparas i webbläsarens `localStorag
 | **Säkerhetskopiering** | Ladda ner hela databasen (anställda, historik, loggar, lönespecar) som JSON, eller återställ från backup |
 | **Frånvarostatistik** | Donut-diagram som visar totalt antal jobbade pass, sjukdagar och semesterdagar för alla anställda |
 | **Skiftbyten** | Admin ser alla väntande skiftbytesförfrågningar, godkänner (passet flyttas automatiskt i schemat) eller nekar |
+| **Meddelanden från anställda** | Inkorgsvy med alla meddelanden sorterade nyast först — olästa markeras med 🔵 och räknas i rubriken. "Markera alla lästa"-knapp |
 
 ---
 
@@ -103,6 +107,7 @@ Kräver ingen backend eller databas — allt sparas i webbläsarens `localStorag
 
 | Funktion | Beskrivning |
 |----------|-------------|
+| **Flerspråkigt stöd** | Knapp 🇬🇧 EN / 🇸🇪 SV i navigeringen växlar hela gränssnittet mellan svenska och engelska — 200+ nycklar, sparas i `localStorage`, datum- och talformatering anpassas till valt språk |
 | **Dark Mode / Light Mode** | Fullt stöd för mörkt tema, sparas i `localStorage` |
 | **Korrekt utskrift i dark mode** | Lönespecen skrivs alltid ut med ljus bakgrund oavsett valt tema |
 | **PIN-knappsats** | Visuellt numeriskt tangentbord på inloggningsskärmen — auto-skickar vid 4 siffror |
@@ -169,11 +174,15 @@ Ingen byggprocess eller Node.js behövs.
 26. **Löneperiod** — Byt filter till *Denna månad* och visa hur totalsiffrorna ändras.
 27. **Övertidsrapport** — Visa stapeldiagrammet med övertid per anställd.
 28. **Semesterplanering** — Scrolla till kalenderkortet, navigera månader och visa ✋-markeringar för tillgänglighet.
-29. **Historikvy** — Klicka *Historik* bredvid en anställd. Visa månadsgruppering, frånvarohistorik med kommentarer och månadsdiagrammet.
-30. **Exportera** — Visa de tre CSV-exportknapparna: löneöversikt, all historik, personalregister (inkl. anst.datum).
-31. **Inställningar** — Visa lönedatum, OB-tider, övertidsgräns och företagsnamn.
-32. **Backup** — Klicka *Ladda ner backup* och visa den nedladdade JSON-filen.
-33. **Offline** — Stäng av WiFi och visa att indikatorn byter till 🔴 Offline utan att appen slutar fungera.
+29. **Meddelanden** — Logga in som worker, scrolla till "Meddelande till Admin", skriv och skicka. Logga sedan in som admin och visa inkorgskortet med 🔵-markering.
+30. **Notiser** — Godkänn en ansökan som admin, logga sedan in som worker och visa att toasten visas direkt.
+31. **Veckorapport** — Visa "Veckorapport"-kortet i arbetar-vyn, bläddra bakåt med ◀ och visa dagsvisa timmar.
+32. **Flerspråkigt** — Klicka 🇬🇧 EN i navigeringen och visa att hela gränssnittet växlar till engelska. Klicka 🇸🇪 SV för att återgå.
+33. **Historikvy** — Klicka *Historik* bredvid en anställd. Visa månadsgruppering, frånvarohistorik med kommentarer och månadsdiagrammet.
+34. **Exportera** — Visa de tre CSV-exportknapparna: löneöversikt, all historik, personalregister (inkl. anst.datum).
+35. **Inställningar** — Visa lönedatum, OB-tider, övertidsgräns och företagsnamn.
+36. **Backup** — Klicka *Ladda ner backup* och visa den nedladdade JSON-filen.
+37. **Offline** — Stäng av WiFi och visa att indikatorn byter till 🔴 Offline utan att appen slutar fungera.
 
 ---
 
@@ -182,7 +191,7 @@ Ingen byggprocess eller Node.js behövs.
 Klistra in detta i webbläsarens konsol (F12 → Console) för att nollställa all data:
 
 ```js
-['timetrack_pro_v3', 'timetrack_logs_v3', 'tt_payslips', 'tt_company', 'tt_ob_evening', 'tt_ob_morning', 'tt_ot_threshold', 'tt_payday', 'tt_admin_message'].forEach(k => localStorage.removeItem(k));
+['timetrack_pro_v3', 'timetrack_logs_v3', 'tt_payslips', 'tt_messages', 'tt_company', 'tt_ob_evening', 'tt_ob_morning', 'tt_ot_threshold', 'tt_payday', 'tt_admin_message', 'tt_lang'].forEach(k => localStorage.removeItem(k));
 location.reload();
 ```
 
@@ -196,14 +205,15 @@ README.md           ← Denna fil
 css/
   style.css         ← All CSS (variabler, animationer, dark mode, kalender, @media print)
 js/
+  i18n.js           ← 200+ översättningsnycklar (sv/en), t(), applyTranslations(), toggleLanguage()
   data.js           ← Global state, konstanter, localStorage-nycklar, datamigration
   utils.js          ← showToast, updateClock, aktivitetslogg, toggleDarkMode, nätverksstatus
   calculations.js   ← isOBTime, calculateOBSplit, getTaxBreakdown, getElapsedMs, getFilteredHistory
-  worker.js         ← Arbetar-vy, clockIn/Out, schema, kalender, profil, PIN-byte, semesteransökan, tillgänglighet, skiftbyte, certifikat, frånvaro, lönedag
-  admin.js          ← Admin-dashboard, lönetabell, sortering, övertidsrapport, semesterplanering, frånvarostatistik, skiftbyten, certifikat-varningar, semesteransökningar, exportCSV, diagram
+  worker.js         ← Arbetar-vy, clockIn/Out, schema, kalender, profil, PIN-byte, semesteransökan, tillgänglighet, skiftbyte, meddelanden, veckorapport, certifikat, frånvaro, lönedag, notiser
+  admin.js          ← Admin-dashboard, lönetabell, sortering, övertidsrapport, semesterplanering, frånvarostatistik, skiftbyten, certifikat-varningar, semesteransökningar, meddelanden, exportCSV, diagram
   modals.js         ← Alla modaler: lönespec, redigera, bekräfta, inställningar, historik, backup, certifikat, mina lönespecar
-  auth.js           ← PIN-login, inaktivitetstimeout (15 min), logout
-  tour.js           ← Interaktiv guide med 4-panelsspotlight, separata steg för anställda och admin
+  auth.js           ← PIN-login, inaktivitetstimeout (15 min), logout, språkinitiering
+  tour.js           ← Interaktiv guide med 4-panelsspotlight, separata steg för anställda och admin (stegtext hämtas via t())
 ```
 
-Skripten laddas i rätt ordning i `index.html` (data → utils → calculations → worker → admin → modals → auth) så att alla globala variabler och funktioner finns tillgängliga vid behov. Ingen byggprocess eller bundler krävs — öppna `index.html` direkt i webbläsaren.
+Skripten laddas i rätt ordning i `index.html` (**i18n → data → utils → calculations → worker → admin → modals → auth → tour**) så att alla globala variabler och funktioner finns tillgängliga vid behov. Ingen byggprocess eller bundler krävs — öppna `index.html` direkt i webbläsaren.
