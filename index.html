@@ -231,6 +231,7 @@
                         <input type="text" id="swap-note" placeholder="T.ex. sjukt barn, läkarbesök...">
                     </div>
                     <button class="btn btn-primary" style="width:auto;" onclick="submitSwapRequest()" data-i18n="btn_send_swap">📤 Skicka förfrågan</button>
+                    <div id="incoming-swap-requests"></div>
                     <div id="my-swap-requests"></div>
                 </div>
 
@@ -496,7 +497,10 @@
 
             <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--card-border);">
 
-            <h3 style="margin-bottom: 1rem;">📅 Planerade Pass</h3>
+            <h3 style="margin-bottom: 1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                📅 Planerade Pass
+                <button class="btn-sm btn-edit" onclick="copyLastWeekScheduleAdmin()" style="font-size:0.72rem; padding:0.3rem 0.7rem;">📋 Kopiera förra veckan</button>
+            </h3>
             <ul id="modal-schedule-list" class="schedule-list" style="margin-bottom: 1.5rem;"></ul>
 
             <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); display:block; margin-bottom:0.4rem;">Lägg till pass manuellt</label>

@@ -129,6 +129,7 @@ function loadWorkerView() {
     renderMyVacationRequests();
     renderAvailabilityList();
     renderMySwapRequests();
+    renderIncomingSwapRequests();
     populateSwapForm();
     showPendingNotifications();
 }
@@ -710,15 +711,69 @@ function renderMySwapRequests() {
     const reqs = [...(currentUser.swapRequests || [])].reverse().slice(0, 6);
     if (!reqs.length) { list.innerHTML = ''; return; }
 
-    const statusLabel = { pending: '⏳ Väntar', approved: '✅ Godkänd', rejected: '❌ Nekad' };
-    const statusColor = { pending: '#f59e0b',   approved: '#10b981',    rejected: '#ef4444' };
+    const statusLabel = { pending: '⏳ Väntar på kollega', peer_approved: '⏳ Väntar på admin', approved: '✅ Godkänd', rejected: '❌ Nekad', peer_rejected: '❌ Nekad av kollega' };
+    const statusColor = { pending: '#f59e0b', peer_approved: '#3b82f6', approved: '#10b981', rejected: '#ef4444', peer_rejected: '#ef4444' };
 
     list.innerHTML = '<h4 style="margin:0.75rem 0 0.4rem; font-size:0.9rem;">Mina förfrågningar</h4>' +
         reqs.map(r => `
         <div style="display:flex; justify-content:space-between; align-items:center; padding:0.35rem 0; border-bottom:1px solid var(--card-border); flex-wrap:wrap; gap:0.25rem;">
             <span style="font-size:0.85rem;">${r.myShift.day} ${r.myShift.time} → ${r.targetEmpName}</span>
-            <span style="color:${statusColor[r.status]}; font-weight:700; font-size:0.8rem;">${statusLabel[r.status]}</span>
+            <span style="color:${statusColor[r.status] || '#64748b'}; font-weight:700; font-size:0.8rem;">${statusLabel[r.status] || r.status}</span>
         </div>`).join('');
+}
+
+// Feature 8: render incoming swap requests (where currentUser is the target)
+function renderIncomingSwapRequests() {
+    const list = document.getElementById('incoming-swap-requests');
+    if (!list) return;
+
+    const incoming = [];
+    employees.filter(e => e.role !== 'admin' && e.id !== currentUser.id).forEach(emp => {
+        (emp.swapRequests || []).filter(r => r.targetEmpId === currentUser.id && r.status === 'pending').forEach(r => {
+            incoming.push({ ...r, fromEmpId: emp.id, fromEmpName: emp.name });
+        });
+    });
+
+    if (!incoming.length) { list.innerHTML = ''; return; }
+
+    list.innerHTML = `<h4 style="margin:0.75rem 0 0.4rem; font-size:0.9rem; color:#3b82f6;">📨 Inkommande skiftbyten (${incoming.length})</h4>` +
+        incoming.map(r => `
+        <div style="padding:0.5rem 0; border-bottom:1px solid var(--card-border);">
+            <div style="font-size:0.85rem; margin-bottom:0.4rem;">
+                <strong>${r.fromEmpName}</strong> vill ge dig sitt pass:
+                <strong style="color:#3b82f6;">${r.myShift.day} ${r.myShift.time}</strong>
+                ${r.note ? `<div style="color:var(--text-muted); font-size:0.78rem; font-style:italic;">"${r.note}"</div>` : ''}
+            </div>
+            <div style="display:flex; gap:0.5rem;">
+                <button class="btn-sm" style="background:#10b981;" onclick="acceptIncomingSwap('${r.fromEmpId}','${r.id}')">✅ Acceptera</button>
+                <button class="btn-sm btn-delete" onclick="declineIncomingSwap('${r.fromEmpId}','${r.id}')">❌ Neka</button>
+            </div>
+        </div>`).join('');
+}
+
+function acceptIncomingSwap(fromEmpId, reqId) {
+    const fromEmp = employees.find(e => e.id === fromEmpId);
+    if (!fromEmp) return;
+    const req = (fromEmp.swapRequests || []).find(r => r.id === reqId);
+    if (!req) return;
+    req.status = 'peer_approved'; req.peerReviewedAt = Date.now();
+    _pushNotification(fromEmp, `👍 ${currentUser.name} godkände ditt skiftbyte (${req.myShift.day}). Väntar på admin.`);
+    saveData();
+    renderIncomingSwapRequests();
+    renderMySwapRequests();
+    showToast('Du accepterade skiftbytet. Väntar på admin.', 'success');
+}
+
+function declineIncomingSwap(fromEmpId, reqId) {
+    const fromEmp = employees.find(e => e.id === fromEmpId);
+    if (!fromEmp) return;
+    const req = (fromEmp.swapRequests || []).find(r => r.id === reqId);
+    if (!req) return;
+    req.status = 'peer_rejected'; req.peerReviewedAt = Date.now();
+    _pushNotification(fromEmp, `❌ ${currentUser.name} nekade ditt skiftbyte (${req.myShift.day}).`);
+    saveData();
+    renderIncomingSwapRequests();
+    showToast('Skiftbytet nekat.', 'warning');
 }
 
 // ================================================================

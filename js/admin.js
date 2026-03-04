@@ -511,39 +511,66 @@ function renderAbsenceStats() {
 }
 
 // ================================================================
-// SKIFTBYTE (Feature 7)
+// SKIFTBYTE — fullt flöde (Feature 8: peer-approve → admin confirm)
 // ================================================================
 function renderSwapRequests() {
     const list = document.getElementById('swap-requests-list');
     if (!list) return;
 
-    const pending = [];
+    const readyForAdmin  = []; // peer_approved → admin acts
+    const awaitingPeer   = []; // pending → waiting for target worker
+
     employees.filter(e => e.role !== 'admin').forEach(emp => {
-        (emp.swapRequests || []).filter(r => r.status === 'pending').forEach(r => {
-            pending.push({ ...r, empId: emp.id, empName: emp.name });
+        (emp.swapRequests || []).forEach(r => {
+            if (r.status === 'peer_approved') readyForAdmin.push({ ...r, empId: emp.id, empName: emp.name });
+            if (r.status === 'pending')       awaitingPeer.push({ ...r, empId: emp.id, empName: emp.name });
         });
     });
 
+    const total   = readyForAdmin.length + awaitingPeer.length;
     const heading = document.getElementById('swap-requests-heading');
-    if (heading) heading.innerText = `🔄 Skiftbyten${pending.length ? ` (${pending.length})` : ''}`;
+    if (heading) heading.innerText = `🔄 Skiftbyten${readyForAdmin.length ? ` (${readyForAdmin.length} redo)` : total ? ` (${total})` : ''}`;
 
-    if (!pending.length) {
+    if (!total) {
         list.innerHTML = '<p style="color:var(--text-muted); padding:0.5rem 0; margin:0;">Inga väntande skiftbyten.</p>';
         return;
     }
-    pending.sort((a, b) => a.createdAt - b.createdAt);
-    list.innerHTML = pending.map(r => `
-        <div style="padding:0.75rem 0; border-bottom:1px solid var(--card-border);">
-            <div style="margin-bottom:0.4rem;">
-                <strong>${r.empName}</strong> vill ge sitt pass till <strong>${r.targetEmpName}</strong>
-                <span style="color:var(--text-muted); font-size:0.85rem; margin-left:0.4rem;">${r.myShift.day} ${r.myShift.time}</span>
-                ${r.note ? `<div style="color:var(--text-muted); font-size:0.8rem; font-style:italic; margin-top:0.2rem;">"${r.note}"</div>` : ''}
-            </div>
-            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                <button class="btn-sm" style="background:#10b981;" onclick="approveSwapRequest('${r.empId}','${r.id}')">✅ Godkänn</button>
-                <button class="btn-sm btn-delete" onclick="rejectSwapRequest('${r.empId}','${r.id}')">❌ Neka</button>
-            </div>
-        </div>`).join('');
+
+    let html = '';
+
+    if (readyForAdmin.length) {
+        html += `<p style="font-size:0.8rem; font-weight:700; color:#10b981; margin:0 0 0.5rem;">✅ Kollegans svar klart — väntar på ditt godkännande</p>`;
+        readyForAdmin.sort((a, b) => a.createdAt - b.createdAt).forEach(r => {
+            html += `<div style="padding:0.75rem 0; border-bottom:1px solid var(--card-border);">
+                <div style="margin-bottom:0.4rem;">
+                    <strong>${r.empName}</strong> vill ge sitt pass till <strong>${r.targetEmpName}</strong>
+                    <span style="color:var(--text-muted); font-size:0.85rem; margin-left:0.4rem;">${r.myShift.day} ${r.myShift.time}</span>
+                    ${r.note ? `<div style="color:var(--text-muted); font-size:0.8rem; font-style:italic; margin-top:0.2rem;">"${r.note}"</div>` : ''}
+                </div>
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <button class="btn-sm" style="background:#10b981;" onclick="approveSwapRequest('${r.empId}','${r.id}')">✅ Bekräfta byte</button>
+                    <button class="btn-sm btn-delete" onclick="rejectSwapRequest('${r.empId}','${r.id}')">❌ Neka</button>
+                </div>
+            </div>`;
+        });
+    }
+
+    if (awaitingPeer.length) {
+        html += `<p style="font-size:0.8rem; font-weight:700; color:#f59e0b; margin:${readyForAdmin.length ? '1rem' : '0'} 0 0.5rem;">⏳ Väntar på kollegans svar</p>`;
+        awaitingPeer.sort((a, b) => a.createdAt - b.createdAt).forEach(r => {
+            html += `<div style="padding:0.75rem 0; border-bottom:1px solid var(--card-border); opacity:0.75;">
+                <div>
+                    <strong>${r.empName}</strong> → <strong>${r.targetEmpName}</strong>
+                    <span style="color:var(--text-muted); font-size:0.85rem; margin-left:0.4rem;">${r.myShift.day} ${r.myShift.time}</span>
+                </div>
+                <div style="margin-top:0.4rem; display:flex; gap:0.5rem;">
+                    <button class="btn-sm btn-delete" style="font-size:0.72rem;" onclick="rejectSwapRequest('${r.empId}','${r.id}')">❌ Avbryt förfrågan</button>
+                </div>
+            </div>`;
+        });
+    }
+
+    list.innerHTML = html;
 }
 
 function approveSwapRequest(empId, reqId) {

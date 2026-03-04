@@ -204,6 +204,37 @@ function renderModalSchedule(id) {
     });
 }
 
+// Feature 2: copy last week's shifts +7 days for a specific employee (admin edit modal)
+function copyLastWeekScheduleAdmin() {
+    const id  = document.getElementById('edit-emp-id').value;
+    const emp = employees.find(e => e.id === id);
+    if (!emp) return;
+
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    let dow = now.getDay(); if (dow === 0) dow = 7;
+    const thisMonday = new Date(now); thisMonday.setDate(now.getDate() - dow + 1);
+    const lastMonday = new Date(thisMonday); lastMonday.setDate(thisMonday.getDate() - 7);
+    const lastSunday = new Date(lastMonday); lastSunday.setDate(lastMonday.getDate() + 6);
+    const fromStr = lastMonday.toISOString().slice(0, 10);
+    const toStr   = lastSunday.toISOString().slice(0, 10);
+
+    const lastWeekShifts = emp.schedule.filter(s => s.day >= fromStr && s.day <= toStr);
+    if (!lastWeekShifts.length) return showToast('Inga pass förra veckan att kopiera.', 'warning');
+
+    let added = 0;
+    lastWeekShifts.forEach(shift => {
+        const newDate    = new Date(shift.day); newDate.setDate(newDate.getDate() + 7);
+        const newDateStr = newDate.toISOString().slice(0, 10);
+        if (!emp.schedule.some(s => s.day === newDateStr && s.time === shift.time)) {
+            emp.schedule.push({ day: newDateStr, time: shift.time });
+            added++;
+        }
+    });
+
+    if (added > 0) { saveData(); renderModalSchedule(id); showToast(`${added} pass kopierade till denna vecka!`, 'success'); }
+    else showToast('Dessa pass finns redan denna vecka.', 'warning');
+}
+
 function deleteShiftFromModal(id, index) {
     employees.find(e => e.id === id).schedule.splice(index, 1);
     saveData(); renderModalSchedule(id);
@@ -347,7 +378,7 @@ function openHistoryModal(id) {
                     <td style="color:#8b5cf6;">${s.obHours.toFixed(2)}h</td>
                     <td style="color:#f97316;">${ot.toFixed(2)}h</td>
                     <td style="color:var(--text-muted);">${s.breakMinutes || 0} min</td>
-                    <td style="color:var(--text-muted); font-size:0.8rem; max-width:120px; word-break:break-word;">${s.note || ''}</td>
+                    <td id="note-cell-${origIdx}" style="font-size:0.8rem; max-width:130px; word-break:break-word; cursor:${isAdmin ? 'pointer' : 'default'};" ${isAdmin ? `onclick="inlineEditNote('${id}',${origIdx})"` : ''} title="${isAdmin ? 'Klicka för att redigera kommentar' : ''}"><span style="color:${s.note ? 'var(--text-color)' : 'var(--text-muted)'};">${s.note || (isAdmin ? '+ kommentar' : '')}</span></td>
                     <td>${Math.round(pay).toLocaleString('sv-SE')} kr</td>
                     ${delBtn}
                 </tr>`;
@@ -434,7 +465,7 @@ function closeHistoryModal() {
     document.getElementById('history-modal').classList.remove('active');
 }
 
-// Feature 4 (monthly chart for employee)
+// Feature 4 (monthly earnings line chart — last 6 months + average)
 function renderHistoryChart(emp) {
     const monthly = {};
     emp.workedHistory.forEach(s => {
@@ -442,24 +473,83 @@ function renderHistoryChart(emp) {
         if (!monthly[m]) monthly[m] = 0;
         monthly[m] += (s.hours * emp.wage) + (s.obHours * emp.wage * 1.5) + ((s.otHours || 0) * emp.wage * 0.5);
     });
-    const months = Object.keys(monthly).sort();
-    const labels = months.map(m => new Date(m + '-01').toLocaleDateString('sv-SE', { month: 'short', year: '2-digit' }));
-    const data   = months.map(m => Math.round(monthly[m]));
+
+    // Show last 6 months (or fewer if not enough data)
+    const allMonths = Object.keys(monthly).sort();
+    const months    = allMonths.slice(-6);
+    const data      = months.map(m => Math.round(monthly[m]));
+    const avg       = data.length ? Math.round(data.reduce((a, b) => a + b, 0) / data.length) : 0;
+    const locale    = getLangLocale();
+    const labels    = months.map(m => new Date(m + '-01').toLocaleDateString(locale, { month: 'short', year: '2-digit' }));
+
     if (window.historyEmpChart) window.historyEmpChart.destroy();
     const ctx  = document.getElementById('history-emp-chart').getContext('2d');
     const dark = document.body.classList.contains('dark-mode');
+    const tickColor = dark ? '#94a3b8' : '#64748b';
     window.historyEmpChart = new Chart(ctx, {
-        type: 'bar',
-        data: { labels, datasets: [{ label: 'Bruttolön (kr)', data, backgroundColor: '#3b82f6', borderRadius: 4 }] },
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Bruttolön (kr)',
+                    data,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59,130,246,0.12)',
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#3b82f6',
+                    fill: true,
+                    tension: 0.3,
+                },
+                {
+                    label: 'Snitt',
+                    data: months.map(() => avg),
+                    borderColor: '#f59e0b',
+                    borderDash: [6, 4],
+                    borderWidth: 1.5,
+                    pointRadius: 0,
+                    fill: false,
+                }
+            ]
+        },
         options: {
             responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: { legend: { labels: { color: tickColor, boxWidth: 12, font: { size: 11 } } } },
             scales: {
-                x: { grid: { display: false }, ticks: { color: dark ? '#94a3b8' : '#64748b' } },
-                y: { border: { display: false }, ticks: { color: dark ? '#94a3b8' : '#64748b' } }
+                x: { grid: { display: false }, ticks: { color: tickColor } },
+                y: { border: { display: false }, ticks: { color: tickColor } }
             }
         }
     });
+}
+
+// Feature 3: inline note editing in history table
+function inlineEditNote(empId, idx) {
+    const cell = document.getElementById(`note-cell-${idx}`);
+    if (!cell || cell.querySelector('input')) return; // already editing
+    const emp     = employees.find(e => e.id === empId);
+    const current = emp?.workedHistory[idx]?.note || '';
+    const inputId = `note-input-${idx}`;
+    cell.innerHTML = `
+        <div style="display:flex; gap:0.3rem; align-items:center;" onclick="event.stopPropagation()">
+            <input id="${inputId}" type="text" value="${current.replace(/"/g, '&quot;')}"
+                style="flex:1; min-width:80px; padding:0.2rem 0.4rem; border-radius:5px; border:1px solid var(--input-border); background:var(--input-bg); color:var(--text-color); font-size:0.78rem;"
+                onkeydown="if(event.key==='Enter')saveInlineNote('${empId}',${idx},'${inputId}'); if(event.key==='Escape')openHistoryModal(_historyEmpId);">
+            <button class="btn-sm" style="padding:0.2rem 0.5rem; font-size:0.72rem; background:#10b981;" onclick="saveInlineNote('${empId}',${idx},'${inputId}')">💾</button>
+            <button class="btn-sm" style="padding:0.2rem 0.5rem; font-size:0.72rem;" onclick="openHistoryModal(_historyEmpId)">✖</button>
+        </div>`;
+    document.getElementById(inputId)?.focus();
+}
+
+function saveInlineNote(empId, idx, inputId) {
+    const emp = employees.find(e => e.id === empId);
+    if (!emp || !emp.workedHistory[idx]) return;
+    const val = document.getElementById(inputId)?.value.trim() || '';
+    emp.workedHistory[idx].note = val;
+    saveData();
+    openHistoryModal(empId);
+    showToast('Kommentar sparad.', 'success');
 }
 
 // Feature 2: remove a single absence date
