@@ -182,7 +182,7 @@
                 </div>
 
                 <!-- Anställningsinformation & certifikat -->
-                <div class="card">
+                <div class="card" id="worker-info-card">
                     <h3>📋 Anställningsinformation</h3>
                     <p id="worker-startdate-info" style="color:var(--text-muted); font-size:0.85rem; margin:0 0 1rem;"></p>
                     <h4 style="margin:0 0 0.6rem;">🎓 Mina Certifikat</h4>
@@ -190,7 +190,7 @@
                 </div>
 
                 <!-- Semesteransökan -->
-                <div class="card">
+                <div class="card" id="vacation-request-card">
                     <h3>📝 Semesteransökan</h3>
                     <p style="color:var(--text-muted); font-size:0.85rem; margin-top:0; margin-bottom:1rem;">Skicka en ansökan till admin. Du har <strong id="req-days-left" style="color:#10b981;"></strong> semesterdagar kvar.</p>
                     <div style="display:flex; gap:1rem; flex-wrap:wrap;">
@@ -280,13 +280,13 @@
                 </div>
 
                 <!-- Feature 2: Övertidsrapport -->
-                <div class="card" style="margin-top:1.5rem;">
+                <div class="card" id="overtime-card" style="margin-top:1.5rem;">
                     <h3>⚠️ Övertidsrapport</h3>
                     <div id="overtime-report-list"></div>
                 </div>
 
                 <!-- Feature 4: Semesterplanering -->
-                <div class="card" style="margin-top:1.5rem;">
+                <div class="card" id="plan-calendar-card" style="margin-top:1.5rem;">
                     <h3>📅 Semesterplanering & Schema</h3>
                     <div id="shared-calendar-container"></div>
                 </div>
@@ -552,7 +552,8 @@
         </div>
     </div>
 
-    <!-- ===== GUIDED TOUR TOOLTIP ===== -->
+    <!-- ===== GUIDED TOUR ===== -->
+    <div id="tour-overlay" class="hidden"></div>
     <div id="tour-tooltip" class="hidden">
         <div id="tour-progress"></div>
         <h4 id="tour-title" style="margin: 0.25rem 0 0.5rem;"></h4>

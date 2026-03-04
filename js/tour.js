@@ -14,17 +14,17 @@ const TOUR_EMPLOYEE = [
         text: 'Se dina jobbade timmar, OB-tid, övertid, bruttolön, kvarvarande semesterdagar och nedräkning till nästa lönedag.'
     },
     {
-        sel: '#schedule-list',
+        sel: '#schedule-view-btn',
         title: '📅 Ditt schema',
-        text: 'Dina inlagda arbetspass visas här. Klicka "Kalender" för en månadsöversikt, eller lägg till nya pass direkt med formuläret nedan.'
+        text: 'Dina inlagda arbetspass visas här. Klicka "Kalender" för månadsöversikt eller lägg till nya pass med formuläret nedan.'
     },
     {
-        sel: '#worker-cert-list',
-        title: '🎓 Certifikat & anställning',
-        text: 'Dina certifikat och kompetenser med utgångsdatum och anställningsdatum. Admin lägger till och uppdaterar dessa.'
+        sel: '#worker-info-card',
+        title: '🎓 Anställningsinformation',
+        text: 'Dina certifikat, kompetenser och anställningsdatum visas här. Admin registrerar och uppdaterar dessa.'
     },
     {
-        sel: '#req-start-date',
+        sel: '#vacation-request-card',
         title: '📝 Semesteransökan',
         text: 'Fyll i datum och skicka en ansökan till admin. Statusen (Väntar / Godkänd / Nekad) visas direkt i listan nedan formuläret.'
     },
@@ -47,27 +47,27 @@ const TOUR_ADMIN = [
         text: 'Filtrera all data på Allt, Denna vecka eller Denna månad. Lönetabell, diagram och rapport uppdateras direkt.'
     },
     {
-        sel: '#payroll-body',
+        sel: '#search-employee',
         title: '💰 Lönetabell',
-        text: 'Komplett löneöversikt för alla anställda. Klicka på kolumnrubriker för att sortera. Klicka "Historik" för att redigera enskilda arbetspass.'
+        text: 'Komplett löneöversikt för alla anställda. Sök, sortera på valfri kolumn, klicka "Historik" för att se och redigera enskilda arbetspass.'
     },
     {
-        sel: '#overtime-report-list',
+        sel: '#overtime-card',
         title: '⏰ Övertidsrapport',
         text: 'Stapeldiagram som visar vem som jobbat mest övertid. Grön = lite, orange = måttlig, röd = hög övertid.'
     },
     {
-        sel: '#shared-calendar-container',
+        sel: '#plan-calendar-card',
         title: '🗓️ Semesterplanering',
         text: 'Månadskalender med alla anställdas scheman och beviljade semestrar. Navigera månader för att planera beläggning.'
     },
     {
-        sel: '#pending-requests-list',
+        sel: '#pending-requests-heading',
         title: '📋 Semesteransökningar',
         text: 'Ansökningar från anställda samlas här. Skriv en valfri kommentar och godkänn eller neka — dagarna dras automatiskt.'
     },
     {
-        sel: '#cert-warnings-list',
+        sel: '#cert-warnings-heading',
         title: '🎓 Certifikat-varningar',
         text: 'Certifikat som löper ut inom 60 dagar visas som påminnelser. Grön = ok, orange = snart, röd = utgånget.'
     },
@@ -95,13 +95,17 @@ function _showTourStep() {
     const target = document.querySelector(step.sel);
 
     if (!target) {
-        // Element not visible/found — skip
+        // Element not found — skip step
         if (_tourIdx < _tourSteps.length - 1) { _tourIdx++; _showTourStep(); }
         else endTour();
         return;
     }
 
-    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Show overlay
+    document.getElementById('tour-overlay').classList.remove('hidden');
+
+    // Instant scroll so getBoundingClientRect is accurate immediately
+    target.scrollIntoView({ behavior: 'instant', block: 'center' });
     target.classList.add('tour-highlight');
 
     const tooltip = document.getElementById('tour-tooltip');
@@ -113,8 +117,7 @@ function _showTourStep() {
     document.getElementById('tour-prev-btn').style.visibility = _tourIdx === 0 ? 'hidden' : 'visible';
     document.getElementById('tour-next-btn').textContent = _tourIdx === _tourSteps.length - 1 ? 'Avsluta ✓' : 'Nästa →';
 
-    // Position tooltip after a short delay so scrollIntoView settles
-    setTimeout(() => _positionTooltip(target), 120);
+    _positionTooltip(target);
 }
 
 function _positionTooltip(target) {
@@ -155,6 +158,7 @@ function tourPrev() {
 
 function endTour() {
     document.querySelectorAll('.tour-highlight').forEach(el => el.classList.remove('tour-highlight'));
+    document.getElementById('tour-overlay').classList.add('hidden');
     document.getElementById('tour-tooltip').classList.add('hidden');
 }
 
