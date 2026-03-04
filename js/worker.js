@@ -126,6 +126,9 @@ function loadWorkerView() {
     renderScheduleSection();
     renderWorkerChart();
     renderMyVacationRequests();
+    renderAvailabilityList();
+    renderMySwapRequests();
+    populateSwapForm();
 }
 
 function renderWorkerChart() {
@@ -586,4 +589,123 @@ function completeScheduledShift(index) {
     addLog(`Slutförde schemalagt pass ${shift.day} ${shift.time} — ${totalHrs.toFixed(2)}h (OB: ${split.obHours.toFixed(2)}h, OT: ${otHours.toFixed(2)}h)`);
     saveData(); loadWorkerView();
     showToast(`Pass klart! ${totalHrs.toFixed(2)}h (OB: ${split.obHours.toFixed(2)}h, OT: ${otHours.toFixed(2)}h)`, "success");
+}
+
+// ================================================================
+// TILLGÄNGLIGHETSMARKERING (Feature 4)
+// ================================================================
+function addAvailability() {
+    const date = document.getElementById('avail-date').value;
+    if (!date) return showToast('Välj ett datum', 'warning');
+    if (!currentUser.availability) currentUser.availability = [];
+    if (currentUser.availability.includes(date)) return showToast('Datumet är redan markerat', 'warning');
+    currentUser.availability.push(date);
+    document.getElementById('avail-date').value = '';
+    saveData();
+    renderAvailabilityList();
+    showToast('Tillgänglighet sparad!', 'success');
+}
+
+function removeAvailability(date) {
+    currentUser.availability = (currentUser.availability || []).filter(d => d !== date);
+    saveData();
+    renderAvailabilityList();
+}
+
+function renderAvailabilityList() {
+    const list = document.getElementById('availability-list');
+    if (!list) return;
+    const avail = [...(currentUser.availability || [])].sort();
+    if (!avail.length) {
+        list.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem; margin:0.5rem 0 0;">Inga dagar markerade ännu.</p>';
+        return;
+    }
+    list.innerHTML = avail.map(d => {
+        const label = new Date(d + 'T12:00:00').toLocaleDateString('sv-SE', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:0.35rem 0; border-bottom:1px solid var(--card-border);">
+            <span style="font-size:0.88rem; text-transform:capitalize;">${label}</span>
+            <button class="btn-sm btn-delete" style="font-size:0.72rem;" onclick="removeAvailability('${d}')">✖</button>
+        </div>`;
+    }).join('');
+}
+
+// ================================================================
+// SKIFTBYTE (Feature 7)
+// ================================================================
+function populateSwapForm() {
+    const shiftSel = document.getElementById('swap-my-shift');
+    const empSel   = document.getElementById('swap-target-emp');
+    if (!shiftSel || !empSel) return;
+
+    const today    = new Date().toISOString().slice(0, 10);
+    const upcoming = (currentUser.schedule || [])
+        .filter(s => s.day >= today)
+        .sort((a, b) => a.day.localeCompare(b.day));
+
+    shiftSel.innerHTML = upcoming.length
+        ? upcoming.map((s, i) => `<option value="${i}">${s.day} ${s.time}</option>`).join('')
+        : '<option value="">Inga kommande pass</option>';
+
+    const colleagues = employees.filter(e => e.role !== 'admin' && e.id !== currentUser.id);
+    empSel.innerHTML = colleagues.length
+        ? colleagues.map(e => `<option value="${e.id}">${e.name}</option>`).join('')
+        : '<option value="">Inga kollegor</option>';
+}
+
+function submitSwapRequest() {
+    const shiftSel = document.getElementById('swap-my-shift');
+    const empSel   = document.getElementById('swap-target-emp');
+    const note     = (document.getElementById('swap-note')?.value || '').trim();
+
+    const today    = new Date().toISOString().slice(0, 10);
+    const upcoming = (currentUser.schedule || [])
+        .filter(s => s.day >= today)
+        .sort((a, b) => a.day.localeCompare(b.day));
+
+    if (!upcoming.length || !shiftSel?.value && shiftSel?.value !== '0') return showToast('Inga kommande pass att byta', 'warning');
+    if (!empSel?.value) return showToast('Välj en kollega', 'warning');
+
+    const myShift = upcoming[parseInt(shiftSel.value)];
+    const target  = employees.find(e => e.id === empSel.value);
+    if (!myShift || !target) return showToast('Ogiltigt val', 'error');
+
+    if (!currentUser.swapRequests) currentUser.swapRequests = [];
+
+    // Check for duplicate pending request for same shift
+    const duplicate = currentUser.swapRequests.find(r =>
+        r.status === 'pending' && r.myShift.day === myShift.day && r.myShift.time === myShift.time
+    );
+    if (duplicate) return showToast('Du har redan en väntande förfrågan för det passet', 'warning');
+
+    currentUser.swapRequests.push({
+        id: Date.now().toString(),
+        myShift: { day: myShift.day, time: myShift.time },
+        targetEmpId: target.id,
+        targetEmpName: target.name,
+        status: 'pending',
+        note,
+        createdAt: Date.now()
+    });
+
+    if (document.getElementById('swap-note')) document.getElementById('swap-note').value = '';
+    saveData();
+    renderMySwapRequests();
+    showToast('Skiftbytesförfrågan skickad till admin!', 'success');
+}
+
+function renderMySwapRequests() {
+    const list = document.getElementById('my-swap-requests');
+    if (!list) return;
+    const reqs = [...(currentUser.swapRequests || [])].reverse().slice(0, 6);
+    if (!reqs.length) { list.innerHTML = ''; return; }
+
+    const statusLabel = { pending: '⏳ Väntar', approved: '✅ Godkänd', rejected: '❌ Nekad' };
+    const statusColor = { pending: '#f59e0b',   approved: '#10b981',    rejected: '#ef4444' };
+
+    list.innerHTML = '<h4 style="margin:0.75rem 0 0.4rem; font-size:0.9rem;">Mina förfrågningar</h4>' +
+        reqs.map(r => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:0.35rem 0; border-bottom:1px solid var(--card-border); flex-wrap:wrap; gap:0.25rem;">
+            <span style="font-size:0.85rem;">${r.myShift.day} ${r.myShift.time} → ${r.targetEmpName}</span>
+            <span style="color:${statusColor[r.status]}; font-weight:700; font-size:0.8rem;">${statusLabel[r.status]}</span>
+        </div>`).join('');
 }

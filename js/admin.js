@@ -19,6 +19,8 @@ function loadAdminData() {
     renderSharedCalendar();
     renderPendingRequests();
     renderCertWarnings();
+    renderAbsenceStats();
+    renderSwapRequests();
 
     // Update sort indicators
     ['name', 'hours', 'ob', 'gross'].forEach(col => {
@@ -108,7 +110,7 @@ function addEmployee() {
     if (!name || !pin || isNaN(wage)) return showToast("Fyll i namn, PIN och lön.", "warning");
     if (employees.find(e => e.pin === pin)) return showToast("PIN-koden används redan!", "error");
 
-    employees.push({ id: Date.now().toString(), name, pin, role: "worker", wage, status: "Utloggad", activeSession: null, workedHistory: [], schedule: [], vacationDaysLeft: 25, sickDaysUsed: 0, vacationHistory: [], sickHistory: [], vacationRequests: [], certifications: [], personnummer: '', phone: '', email: '', address: '', postalCode: '', city: '', startDate: '' });
+    employees.push({ id: Date.now().toString(), name, pin, role: "worker", wage, status: "Utloggad", activeSession: null, workedHistory: [], schedule: [], vacationDaysLeft: 25, sickDaysUsed: 0, vacationHistory: [], sickHistory: [], vacationRequests: [], certifications: [], personnummer: '', phone: '', email: '', address: '', postalCode: '', city: '', startDate: '', availability: [], swapRequests: [] });
     document.getElementById('new-name').value = '';
     document.getElementById('new-pin').value  = '';
     document.getElementById('new-wage').value = '';
@@ -291,6 +293,12 @@ function renderSharedCalendar() {
             if (!dayMap[d]) dayMap[d] = { shifts: [], absences: [] };
             dayMap[d].absences.push({ name: first, type: 'sick' });
         });
+        (emp.availability || []).forEach(d => {
+            if (!d.startsWith(monthStr)) return;
+            if (!dayMap[d]) dayMap[d] = { shifts: [], absences: [] };
+            if (!dayMap[d].available) dayMap[d].available = [];
+            dayMap[d].available.push(first);
+        });
     });
 
     const dayNames = ['Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör', 'Sön'];
@@ -315,6 +323,11 @@ function renderSharedCalendar() {
                 `<span style="display:block; font-size:0.6rem; color:${a.type === 'vacation' ? '#10b981' : '#ef4444'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${a.name} ${a.type === 'vacation' ? '🏖️' : '🤒'}</span>`
             ).join('');
         }
+        if (data?.available?.length) {
+            content += data.available.map(n =>
+                `<span style="display:block; font-size:0.6rem; color:#f59e0b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">✋ ${n}</span>`
+            ).join('');
+        }
         html += `<div class="cal-day ${isToday ? 'is-today' : ''}" style="min-height:60px; align-items:flex-start; padding:0.3rem;">
             <span class="cal-date">${d}</span>${content}
         </div>`;
@@ -330,6 +343,7 @@ function renderSharedCalendar() {
                 <span style="color:#3b82f6;">●</span> Schemalagd
                 <span style="color:#10b981; margin-left:0.5rem;">●</span> Semester
                 <span style="color:#ef4444; margin-left:0.5rem;">●</span> Sjuk
+                <span style="color:#f59e0b; margin-left:0.5rem;">✋</span> Tillgänglig
             </span>
         </div>
         ${html}`;
@@ -420,4 +434,115 @@ function updateChart(labels, regularData, obData) {
             plugins: { legend: { position: 'top' } }
         }
     });
+}
+
+// ================================================================
+// FRÅNVAROSTATISTIK (Feature 3)
+// ================================================================
+function renderAbsenceStats() {
+    const canvas = document.getElementById('absence-stats-chart');
+    if (!canvas) return;
+
+    const workers = employees.filter(e => e.role !== 'admin');
+    const worked  = workers.reduce((s, e) => s + getFilteredHistory(e).length, 0);
+    const sick    = workers.reduce((s, e) => s + (e.sickHistory    || []).length, 0);
+    const vac     = workers.reduce((s, e) => s + (e.vacationHistory|| []).length, 0);
+
+    if (window.absenceChart) window.absenceChart.destroy();
+    window.absenceChart = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels: ['Jobbade pass', 'Sjukdagar', 'Semesterdagar'],
+            datasets: [{
+                data: [worked, sick, vac],
+                backgroundColor: ['#3b82f6', '#ef4444', '#10b981'],
+                borderWidth: 2,
+                borderColor: getComputedStyle(document.body).getPropertyValue('--card-bg') || '#1e2030'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 11 }, padding: 12 } }
+            }
+        }
+    });
+
+    const legend = document.getElementById('absence-stats-legend');
+    if (legend) {
+        legend.innerHTML = [
+            ['#3b82f6', 'Jobbade pass', worked],
+            ['#ef4444', 'Sjukdagar',    sick],
+            ['#10b981', 'Semesterdagar', vac]
+        ].map(([c, l, v]) =>
+            `<span style="color:${c}; margin:0 0.4rem;"><strong>${v}</strong> ${l}</span>`
+        ).join('');
+    }
+}
+
+// ================================================================
+// SKIFTBYTE (Feature 7)
+// ================================================================
+function renderSwapRequests() {
+    const list = document.getElementById('swap-requests-list');
+    if (!list) return;
+
+    const pending = [];
+    employees.filter(e => e.role !== 'admin').forEach(emp => {
+        (emp.swapRequests || []).filter(r => r.status === 'pending').forEach(r => {
+            pending.push({ ...r, empId: emp.id, empName: emp.name });
+        });
+    });
+
+    const heading = document.getElementById('swap-requests-heading');
+    if (heading) heading.innerText = `🔄 Skiftbyten${pending.length ? ` (${pending.length})` : ''}`;
+
+    if (!pending.length) {
+        list.innerHTML = '<p style="color:var(--text-muted); padding:0.5rem 0; margin:0;">Inga väntande skiftbyten.</p>';
+        return;
+    }
+    pending.sort((a, b) => a.createdAt - b.createdAt);
+    list.innerHTML = pending.map(r => `
+        <div style="padding:0.75rem 0; border-bottom:1px solid var(--card-border);">
+            <div style="margin-bottom:0.4rem;">
+                <strong>${r.empName}</strong> vill ge sitt pass till <strong>${r.targetEmpName}</strong>
+                <span style="color:var(--text-muted); font-size:0.85rem; margin-left:0.4rem;">${r.myShift.day} ${r.myShift.time}</span>
+                ${r.note ? `<div style="color:var(--text-muted); font-size:0.8rem; font-style:italic; margin-top:0.2rem;">"${r.note}"</div>` : ''}
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                <button class="btn-sm" style="background:#10b981;" onclick="approveSwapRequest('${r.empId}','${r.id}')">✅ Godkänn</button>
+                <button class="btn-sm btn-delete" onclick="rejectSwapRequest('${r.empId}','${r.id}')">❌ Neka</button>
+            </div>
+        </div>`).join('');
+}
+
+function approveSwapRequest(empId, reqId) {
+    const emp = employees.find(e => e.id === empId);
+    if (!emp) return;
+    const req = (emp.swapRequests || []).find(r => r.id === reqId);
+    if (!req) return;
+    const target = employees.find(e => e.id === req.targetEmpId);
+    if (!target) { showToast('Kollegans konto hittades inte.', 'error'); return; }
+
+    // Move shift from requestor to target
+    const idx = emp.schedule.findIndex(s => s.day === req.myShift.day && s.time === req.myShift.time);
+    if (idx !== -1) emp.schedule.splice(idx, 1);
+    target.schedule.push({ day: req.myShift.day, time: req.myShift.time });
+
+    req.status = 'approved'; req.reviewedAt = Date.now();
+    addLog(`Godkände skiftbyte: ${emp.name}s pass ${req.myShift.day} → ${target.name}`);
+    saveData(); loadAdminData();
+    showToast(`Skiftbyte godkänt! Passet ${req.myShift.day} flyttat till ${target.name}.`, 'success');
+}
+
+function rejectSwapRequest(empId, reqId) {
+    const emp = employees.find(e => e.id === empId);
+    if (!emp) return;
+    const req = (emp.swapRequests || []).find(r => r.id === reqId);
+    if (!req) return;
+    req.status = 'rejected'; req.reviewedAt = Date.now();
+    addLog(`Nekade skiftbyte för ${emp.name}: ${req.myShift.day}`);
+    saveData(); loadAdminData();
+    showToast('Skiftbyte nekat.', 'warning');
 }

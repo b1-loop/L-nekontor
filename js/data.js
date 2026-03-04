@@ -39,6 +39,8 @@ employees.forEach(emp => {
     if (emp.vacationRequests  === undefined) emp.vacationRequests  = [];
     if (emp.certifications    === undefined) emp.certifications    = [];
     if (emp.startDate         === undefined) emp.startDate         = '';
+    if (emp.availability      === undefined) emp.availability      = [];
+    if (emp.swapRequests      === undefined) emp.swapRequests      = [];
     emp.workedHistory.forEach(s => {
         if (s.otHours      === undefined) s.otHours      = 0;
         if (s.breakMinutes === undefined) s.breakMinutes = 0;
