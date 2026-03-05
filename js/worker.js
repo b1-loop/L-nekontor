@@ -44,6 +44,8 @@ function loadWorkerView() {
     document.getElementById('worker-earned').innerText        = Math.round(gross).toLocaleString('sv-SE') + " kr";
     document.getElementById('worker-vacation-days').innerText = currentUser.vacationDaysLeft ?? 25;
     document.getElementById('worker-sick-days').innerText     = currentUser.sickDaysUsed ?? 0;
+    const vabEl = document.getElementById('worker-vab-days');
+    if (vabEl) vabEl.innerText = currentUser.vabDaysUsed ?? 0;
     const reqDaysLeft = document.getElementById('req-days-left');
     if (reqDaysLeft) reqDaysLeft.innerText = (currentUser.vacationDaysLeft ?? 25) + ' st';
 
@@ -67,6 +69,13 @@ function loadWorkerView() {
             const parts  = [...(yrs > 0 ? [`${yrs} år`] : []), ...(mos > 0 ? [`${mos} mån`] : [])];
             sdEl.innerText = `📅 Anställd sedan ${currentUser.startDate}${parts.length ? ` (${parts.join(' ')})` : ''}`;
         } else { sdEl.innerText = ''; }
+    }
+
+    // Avdelning & befattning (read-only för anställd)
+    const deptEl = document.getElementById('worker-dept-info');
+    if (deptEl) {
+        const parts = [currentUser.department, currentUser.position].filter(Boolean);
+        deptEl.innerText = parts.length ? `🏢 ${parts.join(' — ')}` : '';
     }
 
     // Egna certifikat (read-only)
@@ -271,6 +280,7 @@ function updateWorkerControls() {
             <button class="btn btn-in"    onclick="clockIn()">${t('btn_clockin')}</button>
             <button class="btn btn-sick"  onclick="promptAbsence('Sjuk')">${t('btn_sick')}</button>
             <button class="btn btn-leave" onclick="promptAbsence('Semester')">${t('btn_leave')}</button>
+            <button class="btn btn-vab"   onclick="promptAbsence('VAB')">👶 VAB</button>
         `;
     } else if (currentUser.status === 'Sjuk') {
         timerEl.style.display = 'none';
@@ -283,6 +293,12 @@ function updateWorkerControls() {
         btnContainer.innerHTML = `
             <button class="btn btn-in" onclick="clockIn()">${t('btn_clockin')}</button>
             <button class="btn" style="background:#10b981;" onclick="returnToWork()">↩️ ${t('btn_return_vac')}</button>
+        `;
+    } else if (currentUser.status === 'VAB') {
+        timerEl.style.display = 'none';
+        btnContainer.innerHTML = `
+            <button class="btn btn-in" onclick="clockIn()">${t('btn_clockin')}</button>
+            <button class="btn" style="background:#10b981;" onclick="returnToWork()">↩️ Avsluta VAB</button>
         `;
     } else if (currentUser.status === 'Inloggad') {
         timerEl.style.display = 'block'; startLiveTimer();
@@ -392,7 +408,7 @@ let _absenceType = null;
 
 function promptAbsence(type) {
     _absenceType = type;
-    const label = type === 'Sjuk' ? '🤒 Sjukanmälan' : '🏖️ Ledighetsmarkering';
+    const label = type === 'Sjuk' ? '🤒 Sjukanmälan' : type === 'VAB' ? '👶 VAB-anmälan (vård av barn)' : '🏖️ Ledighetsmarkering';
     document.getElementById('absence-type-label').innerText = label;
     document.getElementById('absence-comment-input').value = '';
     document.getElementById('absence-prompt').classList.remove('hidden');
@@ -424,6 +440,11 @@ function setStatus(status, comment = '') {
         if (!currentUser.sickHistory) currentUser.sickHistory = [];
         currentUser.sickHistory.push({ date: new Date().toISOString().slice(0, 10), comment });
     }
+    if (status === 'VAB') {
+        currentUser.vabDaysUsed = (currentUser.vabDaysUsed ?? 0) + 1;
+        if (!currentUser.vabHistory) currentUser.vabHistory = [];
+        currentUser.vabHistory.push({ date: new Date().toISOString().slice(0, 10), comment });
+    }
     currentUser.status = status;
     addLog(`Satte status: ${status}`);
     saveData(); loadWorkerView(); showToast(`Status satt till ${status}`);
@@ -434,7 +455,7 @@ function returnToWork() {
     currentUser.status = 'Utloggad';
     addLog(`Återgick till arbete (från: ${prev})`);
     saveData(); loadWorkerView();
-    showToast(prev === 'Sjuk' ? '✅ Friskanmäld! Välkommen tillbaka.' : '✅ Semester avslutad. Välkommen tillbaka!', 'success');
+    showToast(prev === 'Sjuk' ? '✅ Friskanmäld! Välkommen tillbaka.' : prev === 'VAB' ? '✅ VAB avslutat. Välkommen tillbaka!' : '✅ Semester avslutad. Välkommen tillbaka!', 'success');
 }
 
 function dismissAdminMessage() {

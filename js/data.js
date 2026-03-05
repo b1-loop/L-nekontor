@@ -45,6 +45,11 @@ employees.forEach(emp => {
     if (emp.swapRequests      === undefined) emp.swapRequests      = [];
     if (emp.notifications     === undefined) emp.notifications     = [];
     if (emp.lastLogin         === undefined) emp.lastLogin         = null;
+    if (emp.vabDaysUsed       === undefined) emp.vabDaysUsed       = 0;
+    if (emp.vabHistory        === undefined) emp.vabHistory        = [];
+    emp.vabHistory = emp.vabHistory.map(e => typeof e === 'string' ? { date: e, comment: '' } : e);
+    if (emp.department        === undefined) emp.department        = '';
+    if (emp.position          === undefined) emp.position          = '';
     emp.workedHistory.forEach(s => {
         if (s.otHours      === undefined) s.otHours      = 0;
         if (s.breakMinutes === undefined) s.breakMinutes = 0;

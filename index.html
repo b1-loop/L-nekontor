@@ -100,6 +100,7 @@
                         <div class="stat-box"><span data-i18n="stat_gross">Bruttolön</span><strong id="worker-earned">0 kr</strong></div>
                         <div class="stat-box"><span data-i18n="stat_vacation">Semesterdagar kvar</span><strong id="worker-vacation-days" style="color: #10b981;">25</strong></div>
                         <div class="stat-box"><span data-i18n="stat_sick">Sjukdagar</span><strong id="worker-sick-days" style="color: #ef4444;">0</strong></div>
+                        <div class="stat-box"><span>VAB-dagar</span><strong id="worker-vab-days" style="color: #f97316;">0</strong></div>
                         <div class="stat-box"><span data-i18n="stat_payday">Dagar till lön</span><strong id="worker-payday-countdown" style="color:#f59e0b;">—</strong></div>
                     </div>
 
@@ -185,7 +186,8 @@
                 <!-- Anställningsinformation & certifikat -->
                 <div class="card" id="worker-info-card">
                     <h3 data-i18n="card_employment">📋 Anställningsinformation</h3>
-                    <p id="worker-startdate-info" style="color:var(--text-muted); font-size:0.85rem; margin:0 0 1rem;"></p>
+                    <p id="worker-startdate-info" style="color:var(--text-muted); font-size:0.85rem; margin:0 0 0.3rem;"></p>
+                    <p id="worker-dept-info" style="color:var(--text-muted); font-size:0.85rem; margin:0 0 1rem;"></p>
                     <h4 style="margin:0 0 0.6rem;" data-i18n="card_certs">🎓 Mina Certifikat</h4>
                     <div id="worker-cert-list"></div>
                 </div>
@@ -474,6 +476,10 @@
                 <div class="form-group" style="flex: 1; min-width: 90px;"><label for="edit-wage">Timlön (kr)</label><input type="number" id="edit-wage" min="1"></div>
                 <div class="form-group" style="flex: 1; min-width: 90px;"><label for="edit-vacation-days">Semesterdagar kvar</label><input type="number" id="edit-vacation-days" min="0"></div>
                 <div class="form-group" style="flex: 1; min-width: 120px;"><label for="edit-startdate">Anst. datum</label><input type="date" id="edit-startdate"></div>
+            </div>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <div class="form-group" style="flex: 2; min-width: 140px;"><label for="edit-department">Avdelning</label><input type="text" id="edit-department" placeholder="T.ex. Lager, Kassan"></div>
+                <div class="form-group" style="flex: 2; min-width: 140px;"><label for="edit-position">Befattning</label><input type="text" id="edit-position" placeholder="T.ex. Teamledare, Säljare"></div>
             </div>
 
             <hr style="margin: 1.25rem 0; border: none; border-top: 1px solid var(--card-border);">

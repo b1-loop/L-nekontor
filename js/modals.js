@@ -102,6 +102,8 @@ function openEditModal(id) {
     document.getElementById('edit-wage').value             = emp.wage;
     document.getElementById('edit-vacation-days').value    = emp.vacationDaysLeft ?? 25;
     document.getElementById('edit-startdate').value        = emp.startDate    || '';
+    document.getElementById('edit-department').value       = emp.department   || '';
+    document.getElementById('edit-position').value         = emp.position     || '';
     document.getElementById('edit-personnummer').value     = emp.personnummer || '';
     document.getElementById('edit-phone').value            = emp.phone        || '';
     document.getElementById('edit-email').value            = emp.email        || '';
@@ -132,6 +134,8 @@ function saveEmployeeEdit() {
     emp.wage         = newWage;
     if (!isNaN(newVacation)) emp.vacationDaysLeft = newVacation;
     emp.startDate    = (document.getElementById('edit-startdate')?.value     || '');
+    emp.department   = (document.getElementById('edit-department')?.value   || '').trim();
+    emp.position     = (document.getElementById('edit-position')?.value     || '').trim();
     emp.personnummer = (document.getElementById('edit-personnummer')?.value || '').trim();
     emp.phone        = (document.getElementById('edit-phone')?.value        || '').trim();
     emp.email        = (document.getElementById('edit-email')?.value        || '').trim();
@@ -414,7 +418,8 @@ function openHistoryModal(id) {
     const absSection = document.getElementById('history-absence-section');
     const vacHist    = emp.vacationHistory || [];
     const sickHist   = emp.sickHistory     || [];
-    if (vacHist.length || sickHist.length) {
+    const vabHist    = emp.vabHistory      || [];
+    if (vacHist.length || sickHist.length || vabHist.length) {
         absSection.classList.remove('hidden');
         let absHtml = '';
         const fmtEntry = (entry, type) => {
@@ -440,7 +445,15 @@ function openHistoryModal(id) {
                 const db = typeof b === 'string' ? b : b.date;
                 return db.localeCompare(da);
             }).map(e => fmtEntry(e, 'sick')).join('&ensp;');
-            absHtml += `<p style="margin:0;"><strong>🤒 Sjukdagar (${sickHist.length}):</strong><br>${sickDates}</p>`;
+            absHtml += `<p style="margin:0 0 0.4rem;"><strong>🤒 Sjukdagar (${sickHist.length}):</strong><br>${sickDates}</p>`;
+        }
+        if (vabHist.length) {
+            const vabDates = [...vabHist].sort((a, b) => {
+                const da = typeof a === 'string' ? a : a.date;
+                const db = typeof b === 'string' ? b : b.date;
+                return db.localeCompare(da);
+            }).map(e => fmtEntry(e, 'vab')).join('&ensp;');
+            absHtml += `<p style="margin:0;"><strong>👶 VAB-dagar (${vabHist.length}):</strong><br>${vabDates}</p>`;
         }
         document.getElementById('history-absence-content').innerHTML = absHtml;
     } else {
@@ -559,9 +572,12 @@ function removeAbsenceDate(empId, type, date) {
     if (type === 'vacation') {
         const idx = emp.vacationHistory.findIndex(e => (typeof e === 'string' ? e : e.date) === date);
         if (idx > -1) { emp.vacationHistory.splice(idx, 1); emp.vacationDaysLeft = (emp.vacationDaysLeft || 0) + 1; }
-    } else {
+    } else if (type === 'sick') {
         const idx = emp.sickHistory.findIndex(e => (typeof e === 'string' ? e : e.date) === date);
         if (idx > -1) { emp.sickHistory.splice(idx, 1); emp.sickDaysUsed = Math.max(0, (emp.sickDaysUsed || 0) - 1); }
+    } else if (type === 'vab') {
+        const idx = (emp.vabHistory || []).findIndex(e => (typeof e === 'string' ? e : e.date) === date);
+        if (idx > -1) { emp.vabHistory.splice(idx, 1); emp.vabDaysUsed = Math.max(0, (emp.vabDaysUsed || 0) - 1); }
     }
     saveData();
     if (currentUser.role === 'admin') loadAdminData();

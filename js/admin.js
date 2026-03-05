@@ -63,7 +63,7 @@ function loadAdminData() {
         chartOBPay.push(obPay);
 
         tbody.innerHTML += `<tr class="employee-row">
-            <td class="emp-name"><strong class="clickable-name" onclick="openEditModal('${emp.id}')">${emp.name}</strong><br><small style="color:var(--text-muted)">${emp.wage} kr/h</small>${emp.lastLogin ? `<br><small style="color:var(--text-muted)">🕐 ${new Date(emp.lastLogin).toLocaleDateString(getLangLocale(), { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' })}</small>` : ''}</td>
+            <td class="emp-name"><strong class="clickable-name" onclick="openEditModal('${emp.id}')">${emp.name}</strong><br><small style="color:var(--text-muted)">${emp.wage} kr/h${emp.department ? ` · ${emp.department}` : ''}${emp.position ? ` · ${emp.position}` : ''}</small>${emp.lastLogin ? `<br><small style="color:var(--text-muted)">🕐 ${new Date(emp.lastLogin).toLocaleDateString(getLangLocale(), { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' })}</small>` : ''}</td>
             <td><span class="badge ${emp.status.toLowerCase()}">${emp.status}</span></td>
             <td>${totHrs.toFixed(2)}h</td>
             <td style="color: #8b5cf6; font-weight:bold;">${obHrs.toFixed(2)}h</td>
@@ -406,9 +406,9 @@ function exportAllCSV() {
 // PERSONALREGISTER EXPORT
 // ================================================================
 function exportPersonnelCSV() {
-    let csv = "data:text/csv;charset=utf-8,Namn;Personnummer;Telefon;E-post;Gatuadress;Postnummer;Stad;Timlön(kr);Status;Anst.datum\n";
+    let csv = "data:text/csv;charset=utf-8,Namn;Personnummer;Telefon;E-post;Gatuadress;Postnummer;Stad;Timlön(kr);Status;Avdelning;Befattning;Anst.datum\n";
     employees.filter(e => e.role !== 'admin').forEach(emp => {
-        csv += `"${emp.name}";"${emp.personnummer || ''}";"${emp.phone || ''}";"${emp.email || ''}";"${emp.address || ''}";"${emp.postalCode || ''}";"${emp.city || ''}";${emp.wage};"${emp.status}";"${emp.startDate || ''}"\n`;
+        csv += `"${emp.name}";"${emp.personnummer || ''}";"${emp.phone || ''}";"${emp.email || ''}";"${emp.address || ''}";"${emp.postalCode || ''}";"${emp.city || ''}";${emp.wage};"${emp.status}";"${emp.department || ''}";"${emp.position || ''}";"${emp.startDate || ''}"\n`;
     });
     const link = document.createElement('a');
     link.setAttribute('href', encodeURI(csv));
@@ -476,15 +476,16 @@ function renderAbsenceStats() {
     const worked  = workers.reduce((s, e) => s + getFilteredHistory(e).length, 0);
     const sick    = workers.reduce((s, e) => s + (e.sickHistory    || []).length, 0);
     const vac     = workers.reduce((s, e) => s + (e.vacationHistory|| []).length, 0);
+    const vab     = workers.reduce((s, e) => s + (e.vabHistory     || []).length, 0);
 
     if (window.absenceChart) window.absenceChart.destroy();
     window.absenceChart = new Chart(canvas, {
         type: 'doughnut',
         data: {
-            labels: ['Jobbade pass', 'Sjukdagar', 'Semesterdagar'],
+            labels: ['Jobbade pass', 'Sjukdagar', 'Semesterdagar', 'VAB-dagar'],
             datasets: [{
-                data: [worked, sick, vac],
-                backgroundColor: ['#3b82f6', '#ef4444', '#10b981'],
+                data: [worked, sick, vac, vab],
+                backgroundColor: ['#3b82f6', '#ef4444', '#10b981', '#f97316'],
                 borderWidth: 2,
                 borderColor: getComputedStyle(document.body).getPropertyValue('--card-bg') || '#1e2030'
             }]
