@@ -62,6 +62,11 @@ Kräver ingen backend eller databas — allt sparas i webbläsarens `localStorag
 | **Meddelande till admin** | Anställda kan skicka ett fritt meddelande till admin (max 500 tecken) direkt från sin vy |
 | **Notiser vid svar** | Toast-notis visas vid nästa inloggning när admin godkänner eller nekar en semester- eller skiftbytesansökan |
 | **Veckorapport** | Kort med dag-för-dag-vy (mån–sön): jobbade timmar, OB och lön per dag, veckototaler och ◀ ▶ för att bläddra bakåt/framåt i veckor |
+| **Statistik-dashboard** | 8-veckors stapeldiagram (Chart.js) med jobbade timmar per vecka + statistikrutor: snittimmar, bästa veckan, total OB-tid och frånvarograd |
+| **Skiftpool** | Admin lägger ut öppna pass i en pool — anställda ser listan och ansöker med ett klick. Admin godkänner en sökande och passet läggs automatiskt till i personens schema |
+| **Automatisk midnattsutstämpling** | Varning-toast kl 23:45 om man är instämplad. Om man fortfarande är instämplad vid midnatt sker automatisk utstämpling med en varningsnotis |
+| **iCal-export** | 📆-knapp bredvid schema-toggle exporterar alla schemalagda pass som en standard .ics-fil (RFC 5545) — importeras direkt i Google Kalender, Apple Kalender eller Outlook |
+| **Födelsdagshälsning** | Om dagens datum matchar MM-DD i den inloggade anställdas personnummer visas en personlig 🎂-toast direkt vid inloggning |
 | **Interaktiv guide** | ❓ Guide-knapp i navigeringen startar en steg-för-steg genomgång av alla funktioner — startar automatiskt vid första inloggning |
 
 ---
@@ -116,6 +121,9 @@ Kräver ingen backend eller databas — allt sparas i webbläsarens `localStorag
 | **Anställd-ranking** | Topplista med progressbars — rangordna anställda efter vanlig tid, OB, övertid, antal pass eller bruttolön. Respekterar perioffiltret. 🥇🥈🥉 för topp 3 |
 | **Schemavarningar** | Visar automatiskt vilka anställda som saknar pass inlagda för nästa vecka — grön ✅ om alla är täckta, annars ⚠️ per person |
 | **Global historik-sökning** | Fritextsökning tvärs alla anställdas arbetshistorik — sök på namn, datum (ÅÅÅÅ-MM-DD) eller sessionkommentar. Visar timmar, OB, övertid och lön per träff |
+| **Kalenderanteckningar** | Admin klickar på valfri dag i planeringskalendern för att lägga till, redigera eller ta bort en anteckning. Dagar med anteckning visas med en lila 📝-badge i kalenderrutnätet |
+| **Slumpa PIN** | 🎲-knapp bredvid PIN-fältet i redigeringsmodalen genererar en oanvänd 4-siffrig PIN — admin kopierar och meddelar den anställde |
+| **Skiftpool (admin)** | Lägg ut öppna pass i en pool (datum, tid, valfri beskrivning) — se vilka anställda som ansökt och godkänn med ett klick |
 
 ---
 
@@ -129,6 +137,9 @@ Kräver ingen backend eller databas — allt sparas i webbläsarens `localStorag
 | **PIN-knappsats** | Visuellt numeriskt tangentbord på inloggningsskärmen — auto-skickar vid 4 siffror |
 | **Enter-tangent** | Tryck Enter i PIN-fältet för att logga in |
 | **Fel PIN-animation** | Inputfältet skakar och visar "Fel PIN-kod" i rött vid felaktig inloggning |
+| **Brute-force-skydd** | Max 3 felaktiga PIN-försök — därefter 30 sekunders lockout med nedräkning. Felmeddelandet visar antal kvarvarande försök |
+| **XSS-skydd** | `escapeHtml()` saniterar all användardata (namn, anteckningar, beskrivningar) innan den renderas som HTML — skyddar mot cross-site scripting |
+| **PWA / Service Worker** | Appen cachas offline via en Service Worker (cache-first) och kan installeras på mobilens hemskärm |
 | **Inaktivitets-timeout** | Automatisk utloggning efter 15 minuters inaktivitet |
 | **Offline-indikator** | Visar 🟢 Online / 🔴 Offline i navigeringen i realtid |
 | **Toast-notiser** | Animerade notiser för all feedback — inga webbläsar-popups |
@@ -143,9 +154,11 @@ Kräver ingen backend eller databas — allt sparas i webbläsarens `localStorag
 |-----|--------|
 | **Frontend** | HTML5, CSS3 (CSS-variabler, `@keyframes`, `@media print`), Vanilla JS (ES6+) |
 | **Databas** | `localStorage` — ingen server krävs |
-| **Diagram** | [Chart.js](https://www.chartjs.org/) via CDN |
+| **Diagram** | [Chart.js 4.4.7](https://www.chartjs.org/) via CDN (låst version) |
 | **Konfetti** | [canvas-confetti](https://github.com/catdad/canvas-confetti) via CDN |
 | **Arkitektur** | Multi-fil SPA — HTML, CSS och JS i separata filer |
+| **PWA** | Service Worker med cache-first strategi — fungerar helt offline |
+| **Säkerhet** | `escapeHtml()` mot XSS, brute-force-lockout på PIN-login, `try/catch` på localStorage |
 
 ---
 
@@ -214,6 +227,16 @@ Ingen byggprocess eller Node.js behövs.
 50. **Frånvarograd** — Visa 🤒-badge bredvid en anställd i lönetabellen och förklara hur frånvarograden beräknas.
 51. **Realtidsavisering** — Öppna appen i två flikar: admin i en, worker i den andra. Stämpla in som worker och visa att admin-fliken får en toast-notis inom 15 sekunder.
 52. **Meddelandebadge** — Skicka ett meddelande som worker, logga sedan in som admin och visa den röda sifferbadgen på 💬-knappen i navigeringen.
+53. **Statistik-dashboard** — Logga in som worker och scrolla till statistikkortet. Visa 8-veckorsdiagrammet och statistikrutorna (snitt, bästa vecka, OB, frånvarograd).
+54. **Skiftpool (worker)** — Scrolla till "Lediga pass"-kortet, visa ett öppet pass i poolen och klicka *Ansök* för att söka passet.
+55. **Skiftpool (admin)** — Logga in som admin, scrolla till skiftpool-kortet längst ned. Lägg till ett nytt pass (datum + tid + beskrivning) och visa sökande-listan.
+56. **Kalenderanteckning** — Klicka på en dag i semesterplaneringskalendern, skriv en anteckning och spara. Visa att dagen får en lila 📝-badge.
+57. **Slumpa PIN** — Öppna redigeringsmodalen för en anställd, klicka 🎲 bredvid PIN-fältet och visa att en ny unik PIN genereras automatiskt.
+58. **iCal-export** — Logga in som worker, klicka 📆 bredvid schema-toggle och visa att en .ics-fil laddas ned som kan importeras i t.ex. Google Kalender.
+59. **Födelsdagshälsning** — Sätt en anställds personnummer till ett vars MM-DD matchar dagens datum och logga in som den anställde — visa 🎂-toasten.
+60. **Automatisk midnattsutstämpling** — Förklara hur varningen visas kl 23:45 och att appen automatiskt stämplar ut vid midnatt om man glömt.
+61. **Brute-force-skydd** — Mata in tre felaktiga PIN-koder i rad och visa lockout-meddelandet med 30-sekunders-nedräkning.
+62. **PWA-installation** — Öppna appen i Chrome på mobil, välj *Dela → Lägg till på hemskärmen* och visa att appen kan startas offline som en native-app.
 
 ---
 
@@ -238,12 +261,13 @@ css/
 js/
   i18n.js           ← 200+ översättningsnycklar (sv/en), t(), applyTranslations(), toggleLanguage()
   data.js           ← Global state, konstanter, localStorage-nycklar, datamigration
-  utils.js          ← showToast, updateClock, aktivitetslogg, toggleDarkMode, nätverksstatus
+  utils.js          ← escapeHtml, showToast, updateClock, aktivitetslogg, toggleDarkMode, nätverksstatus
   calculations.js   ← isOBTime, calculateOBSplit, getTaxBreakdown, getElapsedMs, getFilteredHistory
-  worker.js         ← Arbetar-vy, clockIn/Out, schema, kalender, profil, PIN-byte, semesteransökan, tillgänglighet, skiftbyte, meddelanden, veckorapport, certifikat, frånvaro, lönedag, notiser
-  admin.js          ← Admin-dashboard, lönetabell, sortering, övertidsrapport, semesterplanering, frånvarostatistik, skiftbyten, certifikat-varningar, semesteransökningar, meddelanden, exportCSV, diagram
-  modals.js         ← Alla modaler: lönespec, redigera, bekräfta, inställningar, historik, backup, certifikat, mina lönespecar
-  auth.js           ← PIN-login, inaktivitetstimeout (15 min), logout, språkinitiering
+  worker.js         ← Arbetar-vy, clockIn/Out, schema, kalender, iCal-export, profil, PIN-byte, semesteransökan, tillgänglighet, skiftbyte, skiftpool, meddelanden, veckorapport, statistik-dashboard, certifikat, frånvaro, lönedag, notiser, födelsdagshälsning, midnattsutstämpling, återkommande schema
+  admin.js          ← Admin-dashboard, lönetabell, sortering, övertidsrapport, semesterplanering, kalenderanteckningar, skiftpool, frånvarostatistik, skiftbyten, certifikat-varningar, semesteransökningar, meddelanden, exportCSV, diagram
+  modals.js         ← Alla modaler: lönespec, redigera (inkl. slumpa PIN), bekräfta, inställningar, historik, backup, certifikat, mina lönespecar
+  auth.js           ← PIN-login, brute-force-lockout (3 försök / 30 s), inaktivitetstimeout (15 min), logout, språkinitiering
+  sw.js             ← Service Worker — cache-first offline-stöd för alla JS/CSS/HTML-filer
   tour.js           ← Interaktiv guide med 4-panelsspotlight, separata steg för anställda och admin (stegtext hämtas via t())
 ```
 
