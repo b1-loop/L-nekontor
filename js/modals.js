@@ -124,6 +124,15 @@ function openEditModal(id) {
 
 function closeEditModal() { document.getElementById('edit-modal').classList.remove('active'); }
 
+function randomizePIN() {
+    const currentId = document.getElementById('edit-emp-id').value;
+    const usedPins  = employees.filter(e => e.id !== currentId).map(e => e.pin);
+    let pin;
+    do { pin = String(Math.floor(1000 + Math.random() * 9000)); } while (usedPins.includes(pin));
+    document.getElementById('edit-pin').value = pin;
+    showToast(`Ny PIN: ${pin} — kom ihåg att spara och meddela den anställde.`, 'success');
+}
+
 function saveEmployeeEdit() {
     const id          = document.getElementById('edit-emp-id').value;
     const emp         = employees.find(e => e.id === id);

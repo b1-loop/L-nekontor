@@ -500,7 +500,13 @@
 
             <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                 <div class="form-group" style="flex: 2; min-width: 140px;"><label for="edit-name">Namn</label><input type="text" id="edit-name"></div>
-                <div class="form-group" style="flex: 1; min-width: 90px;"><label for="edit-pin">PIN-kod</label><input type="text" id="edit-pin" maxlength="4"></div>
+                <div class="form-group" style="flex: 1; min-width: 90px;">
+                    <label for="edit-pin">PIN-kod</label>
+                    <div style="display:flex; gap:0.4rem; align-items:center;">
+                        <input type="text" id="edit-pin" maxlength="4" style="flex:1;">
+                        <button type="button" onclick="randomizePIN()" title="Generera slumpmässig PIN" style="background:#8b5cf6; color:#fff; border:none; border-radius:8px; padding:0.5rem 0.6rem; cursor:pointer; font-size:0.85rem; white-space:nowrap; flex-shrink:0;">🎲</button>
+                    </div>
+                </div>
                 <div class="form-group" style="flex: 1; min-width: 90px;"><label for="edit-wage">Timlön (kr)</label><input type="number" id="edit-wage" min="1"></div>
                 <div class="form-group" style="flex: 1; min-width: 90px;"><label for="edit-vacation-days">Semesterdagar kvar</label><input type="number" id="edit-vacation-days" min="0"></div>
                 <div class="form-group" style="flex: 1; min-width: 120px;"><label for="edit-startdate">Anst. datum</label><input type="date" id="edit-startdate"></div>
