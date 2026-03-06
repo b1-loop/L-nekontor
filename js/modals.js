@@ -114,6 +114,7 @@ function openEditModal(id) {
     document.getElementById('edit-emergency-phone').value   = emp.emergencyPhone  || '';
     renderModalSchedule(id);
     renderModalCertifications(id);
+    renderModalDocuments(id);
     document.getElementById('edit-modal').classList.add('active');
 }
 
@@ -871,6 +872,61 @@ function downloadBackup() {
     a.click();
     URL.revokeObjectURL(url);
     showToast('Backup nedladdad!', 'success');
+}
+
+// ================================================================
+// DOKUMENT
+// ================================================================
+function renderModalDocuments(id) {
+    const emp  = employees.find(e => e.id === id);
+    const list = document.getElementById('modal-doc-list');
+    if (!list) return;
+    const docs = emp.documents || [];
+    if (!docs.length) {
+        list.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem; margin:0;">Inga dokument uppladdade.</p>';
+        return;
+    }
+    list.innerHTML = docs.map(doc => `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:0.4rem 0; border-bottom:1px solid var(--card-border);">
+            <div>
+                <a href="${doc.data}" download="${doc.name}" style="color:#3b82f6; font-size:0.9rem; text-decoration:none;">📄 ${doc.name}</a>
+                <span style="color:var(--text-muted); font-size:0.75rem; margin-left:0.5rem;">${doc.uploadedAt}</span>
+            </div>
+            <button class="btn-sm btn-delete" onclick="deleteDocument('${id}', '${doc.id}')">✖</button>
+        </div>`).join('');
+}
+
+function uploadDocument() {
+    const id        = document.getElementById('edit-emp-id').value;
+    const fileInput = document.getElementById('modal-doc-file');
+    const file      = fileInput.files[0];
+    if (!file) return showToast('Välj en fil först.', 'warning');
+    if (file.size > 2 * 1024 * 1024) return showToast('Filen är för stor (max 2 MB).', 'error');
+    const emp    = employees.find(e => e.id === id);
+    const reader = new FileReader();
+    reader.onload = ev => {
+        if (!emp.documents) emp.documents = [];
+        emp.documents.push({
+            id: Date.now().toString(),
+            name: file.name,
+            type: file.type,
+            data: ev.target.result,
+            uploadedAt: new Date().toISOString().slice(0, 10)
+        });
+        saveData();
+        renderModalDocuments(id);
+        fileInput.value = '';
+        showToast('Dokument uppladdat!', 'success');
+    };
+    reader.readAsDataURL(file);
+}
+
+function deleteDocument(empId, docId) {
+    const emp = employees.find(e => e.id === empId);
+    emp.documents = (emp.documents || []).filter(d => d.id !== docId);
+    saveData();
+    renderModalDocuments(empId);
+    showToast('Dokument raderat.', 'success');
 }
 
 async function restoreBackup(file) {

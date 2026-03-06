@@ -100,6 +100,21 @@ function loadWorkerView() {
         }
     }
 
+    // Dokument (read-only för anställd)
+    const docList = document.getElementById('worker-doc-list');
+    if (docList) {
+        const docs = currentUser.documents || [];
+        if (!docs.length) {
+            docList.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem; margin:0;">Inga dokument från admin.</p>';
+        } else {
+            docList.innerHTML = docs.map(doc => `
+                <div style="padding:0.4rem 0; border-bottom:1px solid var(--card-border);">
+                    <a href="${doc.data}" download="${doc.name}" style="color:#3b82f6; font-size:0.9rem; text-decoration:none;">📄 ${doc.name}</a>
+                    <span style="color:var(--text-muted); font-size:0.75rem; margin-left:0.5rem;">${doc.uploadedAt}</span>
+                </div>`).join('');
+        }
+    }
+
     // Autofill today's date
     const dayInput = document.getElementById('new-shift-day');
     if (dayInput && !dayInput.value) dayInput.value = new Date().toISOString().slice(0, 10);

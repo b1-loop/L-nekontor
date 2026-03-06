@@ -194,6 +194,8 @@
                     <p id="worker-dept-info" style="color:var(--text-muted); font-size:0.85rem; margin:0 0 1rem;"></p>
                     <h4 style="margin:0 0 0.6rem;" data-i18n="card_certs">🎓 Mina Certifikat</h4>
                     <div id="worker-cert-list"></div>
+                    <h4 style="margin:1rem 0 0.6rem;">📁 Mina Dokument</h4>
+                    <div id="worker-doc-list"></div>
                 </div>
 
                 <!-- Semesteransökan -->
@@ -533,6 +535,14 @@
                 <div class="form-group" style="flex:2; min-width:150px; margin-bottom:0;"><label>Namn</label><input type="text" id="modal-cert-name" placeholder="T.ex. Truckkort, HLR, B-körkort"></div>
                 <div class="form-group" style="flex:1; min-width:130px; margin-bottom:0;"><label>Utgångsdatum</label><input type="date" id="modal-cert-expiry"></div>
                 <button class="btn btn-secondary" style="width:auto; margin-top:0;" onclick="addCertification()">Lägg till</button>
+            </div>
+
+            <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--card-border);">
+            <h4 style="margin: 0 0 0.75rem;">📁 Dokument</h4>
+            <div id="modal-doc-list" style="margin-bottom:0.75rem;"></div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:flex-end;">
+                <div class="form-group" style="flex:1; min-width:200px; margin-bottom:0;"><label>Välj fil (max 2 MB — PDF, Word, bild)</label><input type="file" id="modal-doc-file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.txt"></div>
+                <button class="btn btn-secondary" style="width:auto; margin-top:0;" onclick="uploadDocument()">📤 Ladda upp</button>
             </div>
 
             <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--card-border);">
