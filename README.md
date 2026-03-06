@@ -41,10 +41,12 @@ Kräver ingen backend eller databas — allt sparas i webbläsarens `localStorag
 | **Duplicera pass** | 📋-knapp på varje pass fyller i formuläret med samma tider — byt bara datum och tryck Lägg till |
 | **Återkommande pass** | Lägg till ett pass för en valbar veckodag under 4/8/12 veckor framåt med ett klick |
 | **Autofyll datum** | Datumfältet vid nytt pass fylls automatiskt med dagens datum |
-| **Skiftpåminnelse** | Browser-notis + toast om ett pass börjar inom 30 min (uppdateras var 60:e sekund) |
+| **Skiftpåminnelse** | Browser-notis + toast om ett pass börjar inom 30 min (uppdateras var 60:e sekund). Vid inloggning visas även en toast om man har pass idag eller imorgon |
 | **Lönespecifikation** | Bruttolön uppdelad på vanlig tid, OB och övertid. Progressiv skatteberäkning (kommunalskatt 31,49 % + statlig skatt 20 % på belopp över 46 000 kr/mån). Konfetti-animation vid öppning |
 | **Skriv ut / Spara PDF** | Knapp i lönespecifikationen som öppnar utskriftsdialogen — allt utom specen döljs |
-| **Min profil** | Anställda uppdaterar sin kontaktinformation (personnummer, telefon, e-post, gatuadress, postnummer, stad) — synlig för admin |
+| **Profilbild** | Anställda laddar upp ett eget foto (max 500 KB) via 📷-knappen i profilkortet — visas som rund avatar i profilen, redigeringsmodalen och admintabellen |
+| **Min profil** | Anställda uppdaterar sin kontaktinformation (personnummer, telefon, e-post, gatuadress, postnummer, stad, nödkontaktens namn och telefon) — synlig för admin |
+| **Lönestatus** | Statistikruta visar om lönen för aktuell månad är utbetald (✅) eller ej (⏳) — uppdateras när admin markerar utbetalningen |
 | **Byt PIN-kod** | Anställda kan byta sin egen PIN direkt från profilkortet (validerar gamla PIN, 4-siffror, unikhet) |
 | **Friskanmälan / Avsluta semester** | När status är Sjuk visas "✅ Friskanmäl dig" och när status är Semester visas "✅ Avsluta semester" — ett klick återställer till Utloggad |
 | **Semesteransökan** | Anställda skickar en ansökan (datum + anledning) och ser statusen (Väntar/Godkänd/Nekad) direkt i vyn |
@@ -52,6 +54,7 @@ Kräver ingen backend eller databas — allt sparas i webbläsarens `localStorag
 | **Lönedag-nedräkning** | "Dagar till lön"-ruta i stats-grid räknar ned till konfigurerat lönedatum. Visar 🎉 Idag! på lönedagen |
 | **Anställningsinformation** | Visar anställningsdatum och beräknad tjänstetid (X år Y mån) i ett eget kort |
 | **Mina certifikat** | Anställda ser sina certifikat och kompetenser (registrerade av admin) med utgångsdatum och färgkodad status |
+| **Mina dokument** | Anställda ser och laddar ned filer som admin laddat upp på deras profil (anställningsavtal, intyg m.m.) |
 | **Tillgänglighetsmarkering** | Markera dagar du kan jobba men inte är schemalagd — visas för admin i planeringskalendern som ✋-markeringar |
 | **Skiftbyte** | Välj ett kommande pass och en kollega och skicka en bytesförfrågan — admin godkänner och passet flyttas automatiskt |
 | **Meddelande till admin** | Anställda kan skicka ett fritt meddelande till admin (max 500 tecken) direkt från sin vy |
@@ -72,7 +75,11 @@ Kräver ingen backend eller databas — allt sparas i webbläsarens `localStorag
 | **Sök anställda** | Fritextsök i lönetabellen |
 | **Övertidsrapport** | Horisontellt stapeldiagram per anställd sorterat efter övertidstimmar — färgkodat (gul/orange/röd) efter allvarlighetsgrad, respekterar periofiltret |
 | **Semesterplanering** | Delad månadskalender som visar alla anställdas schemalagda pass (blå), semesterdagar (grön 🏖️), sjukdagar (röd 🤒) och tillgänglighetsmarkeringar (gul ✋) — navigera med ◀ ▶ |
-| **Personalhantering** | Lägg till, redigera (namn, PIN, timlön, semesterdagar) och radera anställda |
+| **Personalhantering** | Lägg till, redigera (namn, PIN, timlön, semesterdagar, avdelning, befattning, personuppgifter, nödkontakt) och radera anställda |
+| **Profilbild per anställd** | Admin laddar upp eller byter foto i redigeringsmodalen — avataren visas som miniatyrbild bredvid namnet i lönetabellen |
+| **Dokumenthantering** | Admin laddar upp filer (PDF, Word, bild — max 2 MB) kopplade till en specifik anställd. Filen listas med nedladdningslänk och kan raderas |
+| **Löneutbetalning** | 💰-knapp per anställd i lönetabellen markerar lönen för aktuell månad som utbetald. Knappen blir grön ✅ och inaktiveras. Den anställde får automatiskt en notis och ser uppdaterad lönestatus |
+| **Jubileumsnotiser** | Vid inloggning kontrolleras om någon anställd fyller år idag (baserat på personnummer) eller har jobbsdag (baserat på anställningsdatum) — visas som toast-notiser, en gång per session |
 | **Bekräftelsedialog** | Alla destruktiva åtgärder kräver bekräftelse via en anpassad modal — ingen `window.confirm()` |
 | **Schema vs. faktisk tid** | I redigeringsmodalen visas jobbad tid bredvid schemalagd tid: `08:00–16:00 \| Jobbade: 7,5h (−0,5h)` |
 | **Historikvy per anställd** | Månadsgrupperad historik med deltotaler — vanlig tid, OB, övertid, rast, kommentar och bruttolön |
@@ -189,6 +196,11 @@ Ingen byggprocess eller Node.js behövs.
 38. **Inställningar** — Visa lönedatum, OB-tider, övertidsgräns och företagsnamn.
 39. **Backup** — Klicka *Ladda ner backup* och visa den nedladdade JSON-filen.
 40. **Offline** — Stäng av WiFi och visa att indikatorn byter till 🔴 Offline utan att appen slutar fungera.
+41. **Profilbild** — Logga in som worker, scrolla till profilkortet och ladda upp ett foto via 📷-knappen. Logga sedan in som admin och visa avataren i lönetabellen.
+42. **Nödkontakt** — Visa fälten "Nödkontaktens namn" och "Nödkontaktens telefon" i profilkortet och i adminens redigeringsmodal.
+43. **Dokumenthantering** — Öppna redigeringsmodalen för en anställd, ladda upp en PDF och visa nedladdningslänken. Logga sedan in som worker och visa "Mina Dokument".
+44. **Löneutbetalning** — Klicka 💰-knappen för en anställd i lönetabellen. Visa att knappen blir ✅. Logga in som worker och visa att lönestatus ändrats till "✅ Utbetald".
+45. **Jubileumsnotis** — Sätt en anställds personnummer eller anställningsdatum till dagens datum och logga in som admin för att se jubileumstoasten.
 
 ---
 
