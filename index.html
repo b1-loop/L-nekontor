@@ -375,11 +375,9 @@
                 <div class="admin-grid">
                     <div>
                         <div class="card">
-                            <h3 data-i18n="card_new_emp">➕ Ny Anställd</h3>
-                            <div class="form-group"><label for="new-name" data-i18n="label_name">Namn</label><input type="text" id="new-name" placeholder="T.ex. Anna Svensson"></div>
-                            <div class="form-group"><label for="new-pin" data-i18n="label_pin_field">Personlig PIN (4 siffror)</label><input type="text" id="new-pin" placeholder="T.ex. 4321" maxlength="4"></div>
-                            <div class="form-group"><label for="new-wage" data-i18n="label_wage">Timlön (kr)</label><input type="number" id="new-wage" placeholder="T.ex. 160" min="1"></div>
-                            <button class="btn btn-primary" onclick="addEmployee()" data-i18n="btn_add_emp">Lägg till person</button>
+                            <h3>➕ Ny Anställd</h3>
+                            <p style="color:var(--text-muted); font-size:0.9rem; margin:0 0 1rem;">Guiden samlar all information i 4 steg — från grunduppgifter till schema.</p>
+                            <button class="btn btn-primary" onclick="openOnboardingModal()">🧙 Starta guide för ny anställd</button>
                         </div>
 
                         <div class="card">
@@ -844,6 +842,91 @@
     <script src="js/modals.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/tour.js"></script>
+
+    <!-- ===== ONBOARDING MODAL ===== -->
+    <div id="onboarding-modal" class="modal">
+        <div class="modal-content" style="max-width:560px;">
+            <button class="modal-close" onclick="closeOnboardingModal()">✖</button>
+            <h2 style="margin-top:0; color:#3b82f6;">🧙 Ny anställd</h2>
+
+            <!-- Stegindikator -->
+            <div style="display:flex; gap:0.5rem; margin-bottom:1.5rem;">
+                <div id="ob-step-1" class="ob-step ob-step-active">1. Grunduppgifter</div>
+                <div id="ob-step-2" class="ob-step">2. Kontakt</div>
+                <div id="ob-step-3" class="ob-step">3. Certifikat</div>
+                <div id="ob-step-4" class="ob-step">4. Schema</div>
+            </div>
+
+            <!-- Steg 1: Grunduppgifter -->
+            <div id="ob-panel-1">
+                <div class="form-group"><label>Namn *</label><input type="text" id="ob-name" placeholder="T.ex. Anna Svensson"></div>
+                <div class="form-group">
+                    <label>PIN (4 siffror) *</label>
+                    <div style="display:flex; gap:0.4rem; align-items:center;">
+                        <input type="text" id="ob-pin" maxlength="4" placeholder="T.ex. 4321" style="flex:1;">
+                        <button type="button" onclick="obRandomizePIN()" style="padding:0.6rem 0.8rem; border-radius:8px; border:1px solid var(--input-border); background:var(--input-bg); color:var(--text-color); cursor:pointer; font-size:1rem;" title="Slumpa unik PIN">🎲</button>
+                    </div>
+                </div>
+                <div class="form-group"><label>Timlön (kr) *</label><input type="number" id="ob-wage" placeholder="T.ex. 160" min="1"></div>
+                <div class="form-group">
+                    <label>Anställningsform</label>
+                    <select id="ob-emptype" style="width:100%; padding:0.75rem; border-radius:8px; border:1px solid var(--input-border); background:var(--input-bg); color:var(--text-color);">
+                        <option value="">— Välj —</option>
+                        <option>Heltid</option><option>Deltid</option><option>Timanställd</option><option>Behovsanställd</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Avdelning</label><input type="text" id="ob-dept" placeholder="T.ex. Lager"></div>
+                <div class="form-group"><label>Befattning</label><input type="text" id="ob-pos" placeholder="T.ex. Lagerarbetare"></div>
+                <div class="form-group"><label>Anställningsdatum</label><input type="date" id="ob-startdate"></div>
+            </div>
+
+            <!-- Steg 2: Kontakt -->
+            <div id="ob-panel-2" class="hidden">
+                <div class="form-group"><label>Personnummer</label><input type="text" id="ob-pnr" placeholder="ÅÅMMDD-XXXX"></div>
+                <div class="form-group"><label>Telefon</label><input type="tel" id="ob-phone" placeholder="07X-XXX XX XX"></div>
+                <div class="form-group"><label>E-post</label><input type="email" id="ob-email" placeholder="namn@example.com"></div>
+                <div class="form-group"><label>Gatuadress</label><input type="text" id="ob-address" placeholder="Storgatan 1"></div>
+                <div style="display:flex; gap:0.75rem;">
+                    <div class="form-group" style="flex:1;"><label>Postnummer</label><input type="text" id="ob-zip" placeholder="123 45"></div>
+                    <div class="form-group" style="flex:2;"><label>Stad</label><input type="text" id="ob-city" placeholder="Stockholm"></div>
+                </div>
+                <div class="form-group"><label>Nödkontaktens namn</label><input type="text" id="ob-emname" placeholder="T.ex. Lisa Svensson"></div>
+                <div class="form-group"><label>Nödkontaktens telefon</label><input type="tel" id="ob-emphone" placeholder="07X-XXX XX XX"></div>
+            </div>
+
+            <!-- Steg 3: Certifikat -->
+            <div id="ob-panel-3" class="hidden">
+                <p style="color:var(--text-muted); font-size:0.85rem; margin:0 0 1rem;">Valfritt — lägg till certifikat nu eller gör det senare via redigeringsmodalen.</p>
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.75rem;">
+                    <input type="text" id="ob-cert-name" placeholder="Certifikatnamn" style="flex:2; min-width:120px;">
+                    <input type="date" id="ob-cert-expiry" style="flex:1; min-width:100px;">
+                    <button class="btn-sm btn-edit" onclick="obAddCert()">+ Lägg till</button>
+                </div>
+                <div id="ob-cert-list"></div>
+            </div>
+
+            <!-- Steg 4: Schema -->
+            <div id="ob-panel-4" class="hidden">
+                <p style="color:var(--text-muted); font-size:0.85rem; margin:0 0 1rem;">Valfritt — lägg till startpass nu eller gör det senare via redigeringsmodalen.</p>
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.75rem;">
+                    <input type="date" id="ob-shift-date" style="flex:1; min-width:120px;">
+                    <input type="time" id="ob-shift-start" value="08:00" style="flex:1; min-width:80px;">
+                    <input type="time" id="ob-shift-end"   value="16:00" style="flex:1; min-width:80px;">
+                    <button class="btn-sm btn-edit" onclick="obAddShift()">+ Lägg till</button>
+                </div>
+                <div id="ob-shift-list"></div>
+                <div style="margin-top:1.5rem; padding:1rem; background:var(--stat-bg); border-radius:10px; font-size:0.9rem;">
+                    <strong id="ob-summary"></strong>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div style="display:flex; justify-content:space-between; margin-top:1.5rem;">
+                <button id="ob-btn-prev" class="btn btn-secondary" onclick="onboardingPrev()" style="display:none;">◀ Tillbaka</button>
+                <button id="ob-btn-next" class="btn btn-primary"   onclick="onboardingNext()" style="margin-left:auto;">Nästa ▶</button>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>

@@ -21,3 +21,14 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
     e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
 });
+
+self.addEventListener('notificationclick', e => {
+    e.notification.close();
+    e.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
+            const match = cs.find(c => c.url.includes('index.html') || c.url.endsWith('/'));
+            if (match) return match.focus();
+            return clients.openWindow('./');
+        })
+    );
+});

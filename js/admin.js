@@ -4,6 +4,153 @@
 let _sortCol = null;
 let _sortDir = 1; // 1 = asc, -1 = desc
 
+// ================================================================
+// ONBOARDING — NY ANSTÄLLD (flersteg)
+// ================================================================
+let _obStep     = 1;
+let _obCerts    = [];
+let _obShifts   = [];
+
+function openOnboardingModal() {
+    _obStep = 1; _obCerts = []; _obShifts = [];
+    ['ob-name','ob-pin','ob-wage','ob-emptype','ob-dept','ob-pos','ob-startdate',
+     'ob-pnr','ob-phone','ob-email','ob-address','ob-zip','ob-city','ob-emname','ob-emphone',
+     'ob-cert-name','ob-cert-expiry','ob-shift-date','ob-shift-start','ob-shift-end']
+        .forEach(id => { const el = document.getElementById(id); if (el) el.value = el.tagName === 'SELECT' ? '' : (el.type === 'time' ? (id.includes('start') ? '08:00' : '16:00') : ''); });
+    document.getElementById('ob-cert-list').innerHTML  = '';
+    document.getElementById('ob-shift-list').innerHTML = '';
+    _obRenderStep();
+    document.getElementById('onboarding-modal').classList.add('active');
+}
+
+function closeOnboardingModal() {
+    document.getElementById('onboarding-modal').classList.remove('active');
+}
+
+function _obRenderStep() {
+    for (let i = 1; i <= 4; i++) {
+        document.getElementById(`ob-panel-${i}`).classList.toggle('hidden', i !== _obStep);
+        const stepEl = document.getElementById(`ob-step-${i}`);
+        stepEl.className = 'ob-step' + (i === _obStep ? ' ob-step-active' : (i < _obStep ? ' ob-step-done' : ''));
+    }
+    document.getElementById('ob-btn-prev').style.display = _obStep > 1 ? '' : 'none';
+    const nextBtn = document.getElementById('ob-btn-next');
+    nextBtn.textContent = _obStep < 4 ? 'Nästa ▶' : '✅ Skapa anställd';
+    if (_obStep === 4) _obUpdateSummary();
+}
+
+function onboardingNext() {
+    if (_obStep === 1) {
+        const name = document.getElementById('ob-name').value.trim();
+        const pin  = document.getElementById('ob-pin').value.trim();
+        const wage = parseInt(document.getElementById('ob-wage').value, 10);
+        if (!name) return showToast('Fyll i namn.', 'warning');
+        if (!/^\d{4}$/.test(pin)) return showToast('PIN måste vara 4 siffror.', 'warning');
+        if (employees.find(e => e.pin === pin)) return showToast('PIN-koden används redan.', 'error');
+        if (isNaN(wage) || wage < 1) return showToast('Ange en giltig timlön.', 'warning');
+    }
+    if (_obStep < 4) { _obStep++; _obRenderStep(); }
+    else finishOnboarding();
+}
+
+function onboardingPrev() {
+    if (_obStep > 1) { _obStep--; _obRenderStep(); }
+}
+
+function obRandomizePIN() {
+    const usedPins = employees.map(e => e.pin);
+    let pin;
+    do { pin = String(Math.floor(1000 + Math.random() * 9000)); } while (usedPins.includes(pin));
+    document.getElementById('ob-pin').value = pin;
+    showToast(`PIN satt till ${pin}`, 'success');
+}
+
+function obAddCert() {
+    const name   = document.getElementById('ob-cert-name').value.trim();
+    const expiry = document.getElementById('ob-cert-expiry').value;
+    if (!name) return showToast('Ange certifikatnamn.', 'warning');
+    _obCerts.push({ name, expiryDate: expiry });
+    document.getElementById('ob-cert-name').value   = '';
+    document.getElementById('ob-cert-expiry').value = '';
+    _obRenderCertList();
+}
+
+function _obRenderCertList() {
+    document.getElementById('ob-cert-list').innerHTML = _obCerts.map((c, i) =>
+        `<div style="display:flex; justify-content:space-between; align-items:center; padding:0.35rem 0; border-bottom:1px solid var(--card-border);">
+            <span style="font-size:0.85rem;">${escapeHtml(c.name)}${c.expiryDate ? ` <span style="color:var(--text-muted);">t.o.m. ${c.expiryDate}</span>` : ''}</span>
+            <button class="btn-sm btn-delete" onclick="_obRemoveCert(${i})">✖</button>
+        </div>`
+    ).join('');
+}
+
+function _obRemoveCert(i) { _obCerts.splice(i, 1); _obRenderCertList(); }
+
+function obAddShift() {
+    const date  = document.getElementById('ob-shift-date').value;
+    const start = document.getElementById('ob-shift-start').value;
+    const end   = document.getElementById('ob-shift-end').value;
+    if (!date || !start || !end) return showToast('Fyll i datum och tider.', 'warning');
+    if (start >= end) return showToast('Sluttiden måste vara efter start.', 'error');
+    if (_obShifts.some(s => s.day === date)) return showToast('Det finns redan ett pass det datumet.', 'warning');
+    _obShifts.push({ day: date, time: `${start} - ${end}` });
+    _obShifts.sort((a, b) => a.day.localeCompare(b.day));
+    _obRenderShiftList();
+    _obUpdateSummary();
+}
+
+function _obRenderShiftList() {
+    document.getElementById('ob-shift-list').innerHTML = _obShifts.map((s, i) =>
+        `<div style="display:flex; justify-content:space-between; align-items:center; padding:0.35rem 0; border-bottom:1px solid var(--card-border);">
+            <span style="font-size:0.85rem;">${s.day} &nbsp;<strong>${s.time}</strong></span>
+            <button class="btn-sm btn-delete" onclick="_obRemoveShift(${i})">✖</button>
+        </div>`
+    ).join('');
+}
+
+function _obRemoveShift(i) { _obShifts.splice(i, 1); _obRenderShiftList(); _obUpdateSummary(); }
+
+function _obUpdateSummary() {
+    const name = document.getElementById('ob-name').value.trim() || '—';
+    const wage = document.getElementById('ob-wage').value || '—';
+    const type = document.getElementById('ob-emptype').value || '—';
+    document.getElementById('ob-summary').textContent =
+        `Sammanfattning: ${name} · ${wage} kr/h · ${type} · ${_obCerts.length} certifikat · ${_obShifts.length} pass`;
+}
+
+function finishOnboarding() {
+    const name  = document.getElementById('ob-name').value.trim();
+    const pin   = document.getElementById('ob-pin').value.trim();
+    const wage  = parseInt(document.getElementById('ob-wage').value, 10);
+    employees.push({
+        id: Date.now().toString(), name, pin, role: 'worker', wage,
+        status: 'Utloggad', activeSession: null,
+        workedHistory: [], schedule: [..._obShifts],
+        vacationDaysLeft: 25, sickDaysUsed: 0, vabDaysUsed: 0,
+        vacationHistory: [], sickHistory: [], vabHistory: [],
+        vacationRequests: [], certifications: [..._obCerts],
+        personnummer:   document.getElementById('ob-pnr').value.trim(),
+        phone:          document.getElementById('ob-phone').value.trim(),
+        email:          document.getElementById('ob-email').value.trim(),
+        address:        document.getElementById('ob-address').value.trim(),
+        postalCode:     document.getElementById('ob-zip').value.trim(),
+        city:           document.getElementById('ob-city').value.trim(),
+        startDate:      document.getElementById('ob-startdate').value,
+        emergencyName:  document.getElementById('ob-emname').value.trim(),
+        emergencyPhone: document.getElementById('ob-emphone').value.trim(),
+        employmentType: document.getElementById('ob-emptype').value,
+        department:     document.getElementById('ob-dept').value.trim(),
+        position:       document.getElementById('ob-pos').value.trim(),
+        availability: [], swapRequests: [], notifications: [],
+        documents: [], profilePhoto: '', salaryPayments: [], lastLogin: null,
+    });
+    saveData();
+    loadAdminData();
+    closeOnboardingModal();
+    addLog(`Ny anställd skapad via guide: ${name}`);
+    showToast(`${name} har lagts till! ${_obShifts.length > 0 ? `${_obShifts.length} pass inlagda.` : ''}`, 'success');
+}
+
 function sortTable(col) {
     if (_sortCol === col) _sortDir *= -1;
     else { _sortCol = col; _sortDir = 1; }
@@ -124,20 +271,7 @@ function filterTable() {
     });
 }
 
-function addEmployee() {
-    const name = document.getElementById('new-name').value;
-    const pin  = document.getElementById('new-pin').value;
-    const wage = parseInt(document.getElementById('new-wage').value, 10);
-
-    if (!name || !pin || isNaN(wage)) return showToast("Fyll i namn, PIN och lön.", "warning");
-    if (employees.find(e => e.pin === pin)) return showToast("PIN-koden används redan!", "error");
-
-    employees.push({ id: Date.now().toString(), name, pin, role: "worker", wage, status: "Utloggad", activeSession: null, workedHistory: [], schedule: [], vacationDaysLeft: 25, sickDaysUsed: 0, vacationHistory: [], sickHistory: [], vacationRequests: [], certifications: [], personnummer: '', phone: '', email: '', address: '', postalCode: '', city: '', startDate: '', availability: [], swapRequests: [], notifications: [], emergencyName: '', emergencyPhone: '', documents: [], profilePhoto: '', salaryPayments: [], employmentType: '' });
-    document.getElementById('new-name').value = '';
-    document.getElementById('new-pin').value  = '';
-    document.getElementById('new-wage').value = '';
-    saveData(); loadAdminData(); showToast("Anställd tillagd!", "success");
-}
+// addEmployee() ersatt av openOnboardingModal() / finishOnboarding()
 
 async function deleteEmployee(id) {
     try {

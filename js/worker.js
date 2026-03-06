@@ -15,12 +15,45 @@ function checkShiftReminders() {
 
         if (diffMin > 0 && diffMin <= 30 && !shownReminders.has(key)) {
             shownReminders.add(key);
-            if (Notification.permission === 'granted') {
-                new Notification('⏰ Skiftpåminnelse', {
-                    body: `Ditt skift ${shift.day} ${shift.time} börjar om ${Math.round(diffMin)} minuter!`
-                });
-            }
+            _swNotify('⏰ Skiftpåminnelse', `Ditt skift ${shift.day} ${shift.time} börjar om ${Math.round(diffMin)} minuter!`, key);
             showToast(`Skiftet börjar om ${Math.round(diffMin)} min!`, 'warning');
+        }
+    });
+}
+
+// ================================================================
+// PUSH-NOTISER (SW-backed)
+// ================================================================
+function _swNotify(title, body, tag = '') {
+    if (!('serviceWorker' in navigator) || Notification.permission !== 'granted') return;
+    navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(title, {
+            body,
+            tag,
+            icon: './favicon.ico',
+            requireInteraction: true,
+            actions: [{ action: 'open', title: 'Öppna appen' }]
+        }).catch(() => {});
+    });
+}
+
+function scheduleShiftNotifications() {
+    if (!currentUser?.schedule || !('serviceWorker' in navigator)) return;
+    if (Notification.permission !== 'granted') return;
+    const now = Date.now();
+    const in24h = now + 24 * 60 * 60 * 1000;
+    currentUser.schedule.forEach(shift => {
+        const startStr = shift.time?.split(' - ')[0]?.trim();
+        if (!startStr) return;
+        const shiftStart = new Date(`${shift.day}T${startStr}:00`).getTime();
+        const notify30  = shiftStart - 30 * 60 * 1000;
+        const notify5   = shiftStart - 5  * 60 * 1000;
+        const tag       = `shift-${shift.day}-${startStr}`;
+        if (notify30 > now && notify30 < in24h) {
+            setTimeout(() => _swNotify('⏰ Skiftpåminnelse', `Ditt skift ${shift.day} ${shift.time} börjar om 30 minuter!`, tag + '-30'), notify30 - now);
+        }
+        if (notify5 > now && notify5 < in24h) {
+            setTimeout(() => _swNotify('⏰ Skiftet börjar snart!', `${shift.day} ${shift.time} — du borde vara på plats nu!`, tag + '-5'), notify5 - now);
         }
     });
 }
@@ -30,6 +63,7 @@ function checkShiftReminders() {
 // ================================================================
 let scheduleViewMode = 'list'; // 'list' | 'calendar'
 let longShiftWarned  = false;
+let _dragDate        = null;
 
 function loadWorkerView() {
     updateWorkerControls();
@@ -181,6 +215,7 @@ function loadWorkerView() {
     checkOwnBirthday();
     renderOpenShifts();
     renderWorkerStatsDashboard();
+    scheduleShiftNotifications();
 }
 
 function renderWorkerChart() {
@@ -293,16 +328,44 @@ function renderScheduleCalendar() {
         const shift    = monthShifts[dateStr];
         const isToday  = dateStr === todayStr;
         const holiday  = holidays[dateStr];
-        html += `<div class="cal-day ${shift ? 'has-shift' : ''} ${isToday ? 'is-today' : ''} ${holiday ? 'is-holiday' : ''}">
+        const shiftBadge = shift
+            ? `<span class="cal-shift" draggable="true"
+                ondragstart="event.stopPropagation(); _dragDate='${dateStr}'; event.dataTransfer.effectAllowed='move';"
+                style="cursor:grab; display:block;">${escapeHtml(shift)}</span>`
+            : '';
+        html += `<div class="cal-day ${shift ? 'has-shift' : ''} ${isToday ? 'is-today' : ''} ${holiday ? 'is-holiday' : ''}"
+            ondragover="event.preventDefault(); event.dataTransfer.dropEffect='move'; this.style.outline='2px dashed #3b82f6';"
+            ondragleave="this.style.outline='';"
+            ondrop="this.style.outline=''; dropShift('${dateStr}');">
             <span class="cal-date" ${holiday ? 'style="color:#ef4444;"' : ''}>${d}</span>
-            ${holiday ? `<span class="cal-shift" style="color:#ef4444; font-size:0.6rem;">${holiday}</span>` : ''}
-            ${shift ? `<span class="cal-shift">${shift}</span>` : ''}
+            ${holiday ? `<span class="cal-shift" style="color:#ef4444; font-size:0.6rem;">${escapeHtml(holiday)}</span>` : ''}
+            ${shiftBadge}
         </div>`;
     }
     html += '</div>';
 
     const monthLabel = firstDay.toLocaleDateString('sv-SE', { year: 'numeric', month: 'long' });
-    container.innerHTML = `<div style="font-weight:700; color:var(--text-muted); margin-bottom:0.5rem; text-transform:capitalize;">${monthLabel}</div>` + html;
+    container.innerHTML = `
+        <div style="font-weight:700; color:var(--text-muted); margin-bottom:0.5rem; text-transform:capitalize;">${monthLabel}</div>
+        <p style="font-size:0.75rem; color:var(--text-muted); margin:0 0 0.5rem;">💡 Dra ett pass till ett nytt datum för att flytta det.</p>
+        ${html}`;
+}
+
+function dropShift(targetDate) {
+    if (!_dragDate || _dragDate === targetDate) { _dragDate = null; return; }
+    const emp   = employees.find(e => e.id === currentUser.id);
+    const shift = emp.schedule.find(s => s.day === _dragDate);
+    if (!shift) { _dragDate = null; return; }
+    if (emp.schedule.some(s => s.day === targetDate)) {
+        showToast('Det finns redan ett pass det datumet.', 'warning');
+        _dragDate = null; return;
+    }
+    shift.day  = targetDate;
+    currentUser = emp;
+    _dragDate  = null;
+    saveData();
+    renderScheduleSection();
+    showToast(`Pass flyttat till ${targetDate}.`, 'success');
 }
 
 function updateWorkerControls() {
