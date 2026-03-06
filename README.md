@@ -26,13 +26,14 @@ Kräver ingen backend eller databas — allt sparas i webbläsarens `localStorag
 |----------|-------------|
 | **Stämpelklocka** | Klocka in med GPS-tagg, starta/avsluta rast, stämpla ut |
 | **Färdig pass** | Klicka ✅ Färdig på ett planerat pass — OB, övertid och lön räknas ut automatiskt från schemalagda tider |
-| **Automatisk OB-beräkning** | Sessionen delas upp i vanlig tid och OB-tid med 5-minutsupplösning — gränserna är konfigurerbara av admin |
+| **Automatisk OB-beräkning** | Sessionen delas upp i vanlig tid och OB-tid med 5-minutsupplösning — gränserna är konfigurerbara av admin. Svenska helgdagar (röda dagar) identifieras automatiskt och ger OB-tillägg hela dagen |
 | **Övertidsberäkning** | Timmar utöver den konfigurerbara gränsen (standard 8h/dag) flaggas som övertid och ger 1,5× lön |
 | **Varning vid lång inloggningstid** | Toast-notis om man varit instämplad i över 10 timmar utan att stämpla ut |
 | **Kommentar på arbetspass** | Valfri kommentarsruta dyker upp efter utstämpling (t.ex. "vikariat", "extra kvällsarbete") |
 | **Rastlängd** | Rasttid (minuter) sparas per session och visas i historiken |
-| **Frånvarohantering med kommentar** | Knappar för Sjukdom och Semester öppnar ett inline-formulär där man kan skriva en valfri orsak/kommentar innan man bekräftar |
-| **Frånvarosaldo** | Semesterdagar kvar och sjukdagar visas direkt i stats-grid |
+| **Frånvarohantering med kommentar** | Knappar för Sjukdom, Semester och VAB (Vård av Barn) öppnar ett inline-formulär där man kan skriva en valfri orsak/kommentar innan man bekräftar |
+| **VAB** | Registrera VAB-dag separat från sjukdagar — räknas i ett eget saldo (VAB-dagar) som visas i stats-grid |
+| **Frånvarosaldo** | Semesterdagar kvar, sjukdagar och VAB-dagar visas direkt i stats-grid |
 | **Inkomstgraf** | Grönt månadsdiagram (Chart.js) i arbetar-vyn som visar bruttolön per månad — döljs automatiskt om historik saknas |
 | **Mina lönespecar** | Knapp som öppnar en modal med alla egna sparade lönespecifikationer (period, brutto och netto) |
 | **Schemahantering** | Visa, lägg till och ta bort egna pass — listan sorteras alltid kronologiskt |
@@ -52,7 +53,8 @@ Kräver ingen backend eller databas — allt sparas i webbläsarens `localStorag
 | **Semesteransökan** | Anställda skickar en ansökan (datum + anledning) och ser statusen (Väntar/Godkänd/Nekad) direkt i vyn |
 | **Inloggningsmeddelande** | Admin-meddelande visas som en lila banner när anställda loggar in — stängs per session, dyker upp igen om meddelandet ändras |
 | **Lönedag-nedräkning** | "Dagar till lön"-ruta i stats-grid räknar ned till konfigurerat lönedatum. Visar 🎉 Idag! på lönedagen |
-| **Anställningsinformation** | Visar anställningsdatum och beräknad tjänstetid (X år Y mån) i ett eget kort |
+| **Anställningsinformation** | Visar anställningsdatum, beräknad tjänstetid (X år Y mån), avdelning, befattning och anställningsform i ett eget kort |
+| **Anställningsform** | Admin registrerar anställningsform (Heltid, Deltid, Timanställd, Behovsanställd) per anställd — anställda ser sin form i informationskortet |
 | **Mina certifikat** | Anställda ser sina certifikat och kompetenser (registrerade av admin) med utgångsdatum och färgkodad status |
 | **Mina dokument** | Anställda ser och laddar ned filer som admin laddat upp på deras profil (anställningsavtal, intyg m.m.) |
 | **Tillgänglighetsmarkering** | Markera dagar du kan jobba men inte är schemalagd — visas för admin i planeringskalendern som ✋-markeringar |
@@ -69,13 +71,16 @@ Kräver ingen backend eller databas — allt sparas i webbläsarens `localStorag
 | Funktion | Beskrivning |
 |----------|-------------|
 | **Dashboard-statistik** | Fyra statistikrutor längst upp: lönekostnad för vald period, antal inloggade just nu, snittlön (kr/h) och totala timmar |
+| **Realtidsavisering vid instämpling** | Toast-notis visas för admin inom 15 sekunder när en anställd stämplar in — via `storage`-event (kors-flik) eller polling (samma flik) |
 | **Kostnadsdiagram** | Interaktivt stapeldiagram (Chart.js) — vanlig lön vs OB-tillägg per anställd |
 | **Löneöversikt med perioder** | Filtrera lönetabellen på *Allt*, *Denna vecka* eller *Denna månad* |
 | **Sorterbar lönetabell** | Klicka på kolumnrubriker (Anställd, Vanlig tid, OB, Bruttolön) för att sortera stigande/fallande |
 | **Sök anställda** | Fritextsök i lönetabellen |
 | **Övertidsrapport** | Horisontellt stapeldiagram per anställd sorterat efter övertidstimmar — färgkodat (gul/orange/röd) efter allvarlighetsgrad, respekterar periofiltret |
 | **Semesterplanering** | Delad månadskalender som visar alla anställdas schemalagda pass (blå), semesterdagar (grön 🏖️), sjukdagar (röd 🤒) och tillgänglighetsmarkeringar (gul ✋) — navigera med ◀ ▶ |
-| **Personalhantering** | Lägg till, redigera (namn, PIN, timlön, semesterdagar, avdelning, befattning, personuppgifter, nödkontakt) och radera anställda |
+| **Personalhantering** | Lägg till, redigera (namn, PIN, timlön, semesterdagar, avdelning, befattning, anställningsform, personuppgifter, nödkontakt) och radera anställda |
+| **Schemamallar** | Spara aktuell veckas schema som en namngiven mall i redigeringsmodalen — återanvänd med ett klick så att passen kopieras till rätt veckodagar |
+| **Frånvarograd** | Varje anställd i lönetabellen visar en 🤒-badge med frånvarograd i procent — beräknad som sjukdagar / (jobbade dagar + sjukdagar) |
 | **Profilbild per anställd** | Admin laddar upp eller byter foto i redigeringsmodalen — avataren visas som miniatyrbild bredvid namnet i lönetabellen |
 | **Dokumenthantering** | Admin laddar upp filer (PDF, Word, bild — max 2 MB) kopplade till en specifik anställd. Filen listas med nedladdningslänk och kan raderas |
 | **Löneutbetalning** | 💰-knapp per anställd i lönetabellen markerar lönen för aktuell månad som utbetald. Knappen blir grön ✅ och inaktiveras. Den anställde får automatiskt en notis och ser uppdaterad lönestatus |
@@ -107,6 +112,7 @@ Kräver ingen backend eller databas — allt sparas i webbläsarens `localStorag
 | **Frånvarostatistik** | Donut-diagram som visar totalt antal jobbade pass, sjukdagar och semesterdagar för alla anställda |
 | **Skiftbyten** | Admin ser alla väntande skiftbytesförfrågningar, godkänner (passet flyttas automatiskt i schemat) eller nekar |
 | **Meddelanden från anställda** | Inkorgsvy med alla meddelanden sorterade nyast först — olästa markeras med 🔵 och räknas i rubriken. "Markera alla lästa"-knapp |
+| **Meddelandebadge i navigering** | 💬-knapp i adminens navigering visar antal olästa meddelanden som en röd badge — uppdateras automatiskt |
 | **Anställd-ranking** | Topplista med progressbars — rangordna anställda efter vanlig tid, OB, övertid, antal pass eller bruttolön. Respekterar perioffiltret. 🥇🥈🥉 för topp 3 |
 | **Schemavarningar** | Visar automatiskt vilka anställda som saknar pass inlagda för nästa vecka — grön ✅ om alla är täckta, annars ⚠️ per person |
 | **Global historik-sökning** | Fritextsökning tvärs alla anställdas arbetshistorik — sök på namn, datum (ÅÅÅÅ-MM-DD) eller sessionkommentar. Visar timmar, OB, övertid och lön per träff |
@@ -201,6 +207,13 @@ Ingen byggprocess eller Node.js behövs.
 43. **Dokumenthantering** — Öppna redigeringsmodalen för en anställd, ladda upp en PDF och visa nedladdningslänken. Logga sedan in som worker och visa "Mina Dokument".
 44. **Löneutbetalning** — Klicka 💰-knappen för en anställd i lönetabellen. Visa att knappen blir ✅. Logga in som worker och visa att lönestatus ändrats till "✅ Utbetald".
 45. **Jubileumsnotis** — Sätt en anställds personnummer eller anställningsdatum till dagens datum och logga in som admin för att se jubileumstoasten.
+46. **VAB** — Logga in som worker, klicka *VAB* och skriv en valfri kommentar. Visa att VAB-dagar räknas separat i stats-grid.
+47. **OB på röda dagar** — Stämpla in på ett datum som är en svensk helgdag (t.ex. 1 maj) och visa att hela passet räknas som OB automatiskt.
+48. **Anställningsform** — Öppna redigeringsmodalen för en anställd, välj anställningsform (t.ex. "Deltid") och spara. Logga in som worker och visa att formen visas i anställningsinformationskortet.
+49. **Schemamallar** — Öppna redigeringsmodalen, scrolla till schemamallar, klicka *Spara aktuell vecka som mall*, ge den ett namn. Återanvänd mallen på en annan anställd med ett klick.
+50. **Frånvarograd** — Visa 🤒-badge bredvid en anställd i lönetabellen och förklara hur frånvarograden beräknas.
+51. **Realtidsavisering** — Öppna appen i två flikar: admin i en, worker i den andra. Stämpla in som worker och visa att admin-fliken får en toast-notis inom 15 sekunder.
+52. **Meddelandebadge** — Skicka ett meddelande som worker, logga sedan in som admin och visa den röda sifferbadgen på 💬-knappen i navigeringen.
 
 ---
 
