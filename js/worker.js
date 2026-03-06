@@ -349,9 +349,11 @@ function updateWorkerControls() {
     }
 }
 
-// Feature 3: warn if clocked in > 10h
+// Feature 3: warn if clocked in > 10h, auto clock-out at midnight
+let midnightWarned = false;
 function startLiveTimer() {
     longShiftWarned = false;
+    midnightWarned  = false;
     liveTimerInterval = setInterval(() => {
         const ms    = getElapsedMs(currentUser.activeSession);
         const hours = Math.floor(ms / 3600000);
@@ -364,7 +366,69 @@ function startLiveTimer() {
             longShiftWarned = true;
             showToast('⚠️ Du har varit instämplad i över 10 timmar! Glömde du stämpla ut?', 'warning');
         }
+
+        // Warn 15 min before midnight
+        const now = new Date();
+        if (!midnightWarned && now.getHours() === 23 && now.getMinutes() === 45) {
+            midnightWarned = true;
+            showToast('⚠️ 15 minuter till midnatt — glöm inte stämpla ut!', 'warning');
+        }
+
+        // Auto clock-out if session started on a different calendar day
+        const sessionDate = new Date(currentUser.activeSession.startTime).toLocaleDateString('sv-SE');
+        if (sessionDate !== now.toLocaleDateString('sv-SE')) {
+            clearInterval(liveTimerInterval);
+            showToast('⚠️ Automatisk utstämpling — du var instämplad vid midnatt!', 'warning');
+            clockOut();
+        }
     }, 1000);
+}
+
+// ================================================================
+// ICAL-EXPORT
+// ================================================================
+function exportScheduleToICal() {
+    const schedule = currentUser.schedule || [];
+    if (!schedule.length) return showToast('Inget schema att exportera.', 'warning');
+
+    const pad = n => String(n).padStart(2, '0');
+    const toIcalDt = (dateStr, timeStr) => {
+        const [y, m, d] = dateStr.split('-');
+        const [hh, mm]  = timeStr.split(':');
+        return `${y}${m}${d}T${hh}${mm}00`;
+    };
+
+    const events = schedule.map(s => {
+        const [start, end] = s.time.split(' - ').map(t => t.trim());
+        const dtStart = toIcalDt(s.day, start);
+        const dtEnd   = toIcalDt(s.day, end || start);
+        const uid     = `${dtStart}-${currentUser.id}@timetrackpro`;
+        return [
+            'BEGIN:VEVENT',
+            `DTSTART:${dtStart}`,
+            `DTEND:${dtEnd}`,
+            `SUMMARY:Arbetspass`,
+            `UID:${uid}`,
+            'END:VEVENT'
+        ].join('\r\n');
+    }).join('\r\n');
+
+    const ics = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//TimeTrack Pro//SV',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        events,
+        'END:VCALENDAR'
+    ].join('\r\n');
+
+    const blob = new Blob([ics], { type: 'text/calendar' });
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `schema-${currentUser.name.replace(/\s+/g, '-')}.ics`;
+    a.click();
+    showToast('Schema exporterat till kalender!', 'success');
 }
 
 function clockIn() {

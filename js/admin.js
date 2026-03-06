@@ -295,6 +295,7 @@ function renderSharedCalendar() {
     const lastDay    = new Date(_planYear, _planMonth + 1, 0);
     const todayStr   = new Date().toISOString().slice(0, 10);
     const monthLabel = firstDay.toLocaleDateString('sv-SE', { year: 'numeric', month: 'long' });
+    const calNotes   = JSON.parse(localStorage.getItem(CAL_NOTES_KEY) || '{}');
 
     const dayMap = {};
     employees.filter(e => e.role !== 'admin').forEach(emp => {
@@ -338,6 +339,7 @@ function renderSharedCalendar() {
         const data    = dayMap[dateStr];
         const isToday = dateStr === todayStr;
         const holiday = holidays[dateStr];
+        const note    = calNotes[dateStr] || '';
         let content   = '';
         if (holiday) {
             content += `<span style="display:block; font-size:0.55rem; color:#ef4444; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600;">🔴 ${holiday}</span>`;
@@ -357,7 +359,10 @@ function renderSharedCalendar() {
                 `<span style="display:block; font-size:0.6rem; color:#f59e0b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">✋ ${n}</span>`
             ).join('');
         }
-        html += `<div class="cal-day ${isToday ? 'is-today' : ''} ${holiday ? 'is-holiday' : ''}" style="min-height:60px; align-items:flex-start; padding:0.3rem;">
+        if (note) {
+            content += `<span style="display:block; font-size:0.6rem; color:#8b5cf6; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${note.replace(/"/g,'&quot;')}">📝 ${note}</span>`;
+        }
+        html += `<div class="cal-day ${isToday ? 'is-today' : ''} ${holiday ? 'is-holiday' : ''}" style="min-height:60px; align-items:flex-start; padding:0.3rem; cursor:pointer;" onclick="openCalendarNote('${dateStr}')">
             <span class="cal-date" ${holiday ? 'style="color:#ef4444;"' : ''}>${d}</span>${content}
         </div>`;
     }
@@ -373,9 +378,52 @@ function renderSharedCalendar() {
                 <span style="color:#10b981; margin-left:0.5rem;">●</span> Semester
                 <span style="color:#ef4444; margin-left:0.5rem;">●</span> Sjuk / Röd dag
                 <span style="color:#f59e0b; margin-left:0.5rem;">✋</span> Tillgänglig
+                <span style="color:#8b5cf6; margin-left:0.5rem;">📝</span> Anteckning
             </span>
         </div>
-        ${html}`;
+        ${html}
+        <div id="cal-note-editor" class="hidden" style="margin-top:0.75rem; background:var(--stat-bg); border-radius:10px; border:1px solid var(--card-border); padding:1rem;">
+            <label id="cal-note-label" style="font-size:0.85rem; font-weight:700; display:block; margin-bottom:0.5rem;"></label>
+            <textarea id="cal-note-input" rows="2" style="width:100%; padding:0.6rem; border-radius:8px; border:1px solid var(--input-border); background:var(--input-bg); color:var(--text-color); box-sizing:border-box; resize:vertical; font-family:inherit;" placeholder="Skriv en anteckning för denna dag..."></textarea>
+            <div style="display:flex; gap:0.5rem; margin-top:0.5rem;">
+                <button class="btn btn-primary" style="flex:1;" onclick="saveCalendarNote()">💾 Spara</button>
+                <button class="btn btn-delete btn-sm" style="flex:1; padding:0.75rem;" onclick="deleteCalendarNote()">🗑️ Ta bort</button>
+                <button class="btn btn-secondary" style="flex:1;" onclick="document.getElementById('cal-note-editor').classList.add('hidden')">Stäng</button>
+            </div>
+        </div>`;
+}
+
+let _calNoteDate = null;
+function openCalendarNote(dateStr) {
+    _calNoteDate = dateStr;
+    const calNotes = JSON.parse(localStorage.getItem(CAL_NOTES_KEY) || '{}');
+    const label    = new Date(dateStr).toLocaleDateString('sv-SE', { weekday:'long', day:'numeric', month:'long' });
+    document.getElementById('cal-note-label').innerText = `📝 Anteckning: ${label}`;
+    document.getElementById('cal-note-input').value     = calNotes[dateStr] || '';
+    document.getElementById('cal-note-editor').classList.remove('hidden');
+    document.getElementById('cal-note-input').focus();
+}
+
+function saveCalendarNote() {
+    if (!_calNoteDate) return;
+    const text     = document.getElementById('cal-note-input').value.trim();
+    const calNotes = JSON.parse(localStorage.getItem(CAL_NOTES_KEY) || '{}');
+    if (text) calNotes[_calNoteDate] = text;
+    else delete calNotes[_calNoteDate];
+    localStorage.setItem(CAL_NOTES_KEY, JSON.stringify(calNotes));
+    document.getElementById('cal-note-editor').classList.add('hidden');
+    showToast('Anteckning sparad!', 'success');
+    renderSharedCalendar();
+}
+
+function deleteCalendarNote() {
+    if (!_calNoteDate) return;
+    const calNotes = JSON.parse(localStorage.getItem(CAL_NOTES_KEY) || '{}');
+    delete calNotes[_calNoteDate];
+    localStorage.setItem(CAL_NOTES_KEY, JSON.stringify(calNotes));
+    document.getElementById('cal-note-editor').classList.add('hidden');
+    showToast('Anteckning borttagen.', 'success');
+    renderSharedCalendar();
 }
 
 function changePlanMonth(dir) {

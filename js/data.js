@@ -7,6 +7,7 @@ const PAYSLIPS_KEY   = 'tt_payslips';
 const MESSAGES_KEY   = 'tt_messages';
 const TEMPLATES_KEY  = 'tt_schedule_templates';
 const CLOCKIN_KEY    = 'tt_clockin_queue';
+const CAL_NOTES_KEY  = 'tt_cal_notes';
 
 const defaultEmployees = [
     { id: "1", name: "Admin",          pin: "9999", role: "admin",   wage: 0,   status: "Utloggad", activeSession: null, workedHistory: [], schedule: [],                                                    vacationDaysLeft: 25, sickDaysUsed: 0 },

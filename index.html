@@ -131,7 +131,10 @@
                 <div class="card">
                     <h3>
                         <span data-i18n="card_schedule">📅 Mitt Schema</span>
-                        <button class="btn-sm btn-edit" id="schedule-view-btn" onclick="toggleScheduleView()" style="font-size:0.72rem; padding:0.3rem 0.7rem;" data-i18n="btn_calendar">📅 Kalender</button>
+                        <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+                            <button class="btn-sm btn-edit" id="schedule-view-btn" onclick="toggleScheduleView()" style="font-size:0.72rem; padding:0.3rem 0.7rem;" data-i18n="btn_calendar">📅 Kalender</button>
+                            <button class="btn-sm" onclick="exportScheduleToICal()" style="font-size:0.72rem; padding:0.3rem 0.7rem; background:#8b5cf6; color:#fff; border-radius:6px; border:none; cursor:pointer;" title="Exportera schema till Google/Apple-kalender">📆 iCal</button>
+                        </div>
                     </h3>
                     <ul id="schedule-list" class="schedule-list"></ul>
 
